@@ -25,13 +25,15 @@ if [ ! -d "$ENV_DATA_DST_DIR" ]; then
     mkdir -p -m 777 $ENV_DATA_DST_DIR
 fi
 
-echo "Before starting changing permissions with:"
-echo "   chown -R driver:users ${ENV_DATA_DIR}/*" 
-# docker-compose is mounting the volumes with root:root access which
-# prevents Jupyter from accessing these from inside the container
-# as a note why this works: the Jupyter container runs as the driver user set to
-# user id 1000 with group id 100
-sudo chown -R 1000:100 ${ENV_DATA_DIR}/*
+if [ "${ENV_DATA_DIR}" != "/" ]; then
+    echo "Before starting changing permissions with:"
+    echo "   chown -R driver:users ${ENV_DATA_DIR}/*" 
+    # docker-compose is mounting the volumes with root:root access which
+    # prevents Jupyter from accessing these from inside the container
+    # as a note why this works: the Jupyter container runs as the driver user set to
+    # user id 1000 with group id 100
+    sudo chown -R 1000:100 ${ENV_DATA_DIR}/*
+fi
 
 echo "Starting Composition: $filetouse"
 docker-compose -f $filetouse up -d
