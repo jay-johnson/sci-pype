@@ -7,7 +7,7 @@ Building Scientific Data Pipelines for Jupyter in Docker
 
 .. figure:: https://jaypjohnson.com/_images/image_2016-08-01_building-a-data-science-pipeline.png
 
-Sci-pype is a framework for building data pipelines. It uses a specialized Jupyter docker container extended from the original https://github.com/jupyter/docker-stacks that already support Python 2, Python 3, R, and Julia notebooks. I use sci-pype for machine learning, data analysis, data-sharing, model refinement, and stock analysis projects. It contains a python 2 core for making it easier to integrate with external databases and redis servers, debugging with slack, and colorized notebook logging.
+Sci-Pype is a framework for building data pipelines. It uses a specialized Jupyter docker container extended from the original https://github.com/jupyter/docker-stacks that already support Python 2, Python 3, R, and Julia notebooks. I use sci-pype for machine learning, data analysis, data-sharing, model refinement, and stock analysis projects. It contains a python 2 core for making it easier to integrate with external databases and redis servers, debugging with slack, and colorized notebook logging.
 
 This core was originally built to datamine news releases in near-real time. Now I use it for analyzing, exchanging and sharing data with Jupyter. With this core, I build machine learning models that are published and persisted as JSON or serialized objects using pickle. These models are deployed and tested with a `load-balanced redis cluster`_. 
 
