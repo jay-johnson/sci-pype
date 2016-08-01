@@ -1,0 +1,17 @@
+{
+    "Database Applications": [
+        {
+            "Name":             "STOCKS",
+            "Schema":           "/opt/src/databases/schema/db_schema_stocks.py",
+            "Initializer":      "/opt/src/databases/schema/build_db_stocks.py",
+            "Address List":     "stocksdb:3306",
+            "Database Name":    "stocks",
+            "Password":         "dbadmin123",
+            "User":             "dbadmin",
+            "Type":             "MySQL",
+            "Autocommit":       "False",
+            "Autoflush":        "False",
+            "Debug":            "False"
+        }
+    ]
+}

@@ -1,0 +1,44 @@
+{
+    "Redis Applications" : [
+        {
+            "Name"         : "DATASRC",
+            "Type"         : "Pickle",
+            "Address List" : "localhost:6000",
+            "Request Key"  : "DATA-SRC-IN-Key",
+            "Response Key" : "DATA-SRC-OUT-Key",
+            "Debug"        : "False"
+        },
+        {
+            "Name"         : "DATADST",
+            "Type"         : "Pickle",
+            "Address List" : "localhost:6000",
+            "Request Key"  : "DATA-DST-IN-Key",
+            "Response Key" : "DATA-SRC-OUT-Key",
+            "Debug"        : "False"
+        },
+        {
+            "Name"         : "MODELSRC",
+            "Type"         : "Pickle",
+            "Address List" : "localhost:6000",
+            "Request Key"  : "MODEL-SRC-IN-Key",
+            "Response Key" : "MODEL-SRC-OUT-Key",
+            "Debug"        : "False"
+        },
+        {
+            "Name"         : "MODELDST",
+            "Type"         : "Pickle",
+            "Address List" : "localhost:6000",
+            "Request Key"  : "MODEL-DST-IN-Key",
+            "Response Key" : "MODEL-DST-OUT-Key",
+            "Debug"        : "False"
+        },
+        {
+            "Name"         : "CACHE",
+            "Type"         : "Pickle",
+            "Address List" : "localhost:6000",
+            "Request Key"  : "CACHE-IN-Key",
+            "Response Key" : "CACHE-OUT-Key",
+            "Debug"        : "False"
+        }
+    ]
+}

@@ -1,0 +1,62 @@
+version: '2'
+
+services:
+
+  db:
+    image: jayjohnson/schemaprototyping:1.0.0
+    container_name: "stocksdb"
+    hostname: "stocksdb"
+    networks:
+      - datapype
+    env_file: 
+      - ./test/db.env
+    volumes:
+      - /opt/work/schema:/opt/work/schema
+    ports:
+      - "81:80"
+      - "3307:3306"
+
+  jupyter:
+    image: jayjohnson/jupyter:1.0.0
+    container_name: "jupyter"
+    hostname: "jupyter"
+    depends_on:
+      - "db"
+    entrypoint: /wait-for-its/jupyter-wait-for-it.sh
+    env_file: 
+      - ./test/jupyter.env
+    ports:
+      - "82:8888"
+    volumes:
+      - /opt/project:/opt/project
+      - /opt/work/data/src:/opt/work/data/src
+      - /opt/work/data/dst:/opt/work/data/dst
+      - /opt/work/data/bin:/opt/work/data/bin
+      - /opt/work/data/synthesize:/opt/work/data/synthesize
+      - /opt/work/data/tidy:/opt/work/data/tidy
+      - /opt/work/data/analyze:/opt/work/data/analyze
+      - /opt/work/data/output:/opt/work/data/output
+      - ./wait-for-its:/wait-for-its
+    networks:
+      - datapype
+
+  redis-server:
+    image: jayjohnson/redis-single-node:1.0.0
+    container_name: "redis-server"
+    hostname: "redis-server"
+    depends_on:
+      - "db"
+    entrypoint: /wait-for-its/redis-wait-for-it.sh
+    env_file: 
+      - ./test/redis.env
+    ports:
+      - "6000:6000"
+    networks:
+      - datapype
+    volumes:
+      - ./wait-for-its:/wait-for-its
+
+networks:
+  datapype:
+    driver: bridge
+

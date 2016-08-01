@@ -1,0 +1,28 @@
+version: '2'
+
+services:
+
+  jupyter:
+    image: jayjohnson/jupyter:testing
+    container_name: "jupyter"
+    hostname: "jupyter"
+    env_file: 
+      - ./test/jupyter.env
+    ports:
+      - "82:8888"
+    volumes:
+      - /opt/project:/opt/project
+      - /opt/work/data/src:/opt/work/data/src
+      - /opt/work/data/dst:/opt/work/data/dst
+      - /opt/work/data/bin:/opt/work/data/bin
+      - /opt/work/data/synthesize:/opt/work/data/synthesize
+      - /opt/work/data/tidy:/opt/work/data/tidy
+      - /opt/work/data/analyze:/opt/work/data/analyze
+      - /opt/work/data/output:/opt/work/data/output
+    networks:
+      - standalonedatapype
+
+networks:
+  standalonedatapype:
+    driver: bridge
+
