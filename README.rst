@@ -52,7 +52,7 @@ This container can run in three modes:
     - **Redis server** (`jayjohnson/redis-single-node`_) on port 6000
     
     .. _compose-start-full.sh: https://github.com/jay-johnson/sci-pype/blob/master/compose-start-full.sh
-    .. _full-stack-compose.yml: https://github.com/jay-johnson/sci-pype/blob/master/configs/full-stack-compose.yml
+    .. _full-stack-compose.yml: https://github.com/jay-johnson/sci-pype/blob/master/full-stack-compose.yml
     .. _schemaprototyping repo: https://github.com/jay-johnson/docker-schema-prototyping-with-mysql
     .. _jayjohnson/redis-single-node: https://hub.docker.com/r/jayjohnson/redis-single-node
 
@@ -107,7 +107,7 @@ This document details the following examples. Please refer to the `examples dire
 
     .. figure:: https://jaypjohnson.com/_images/image_2016-08-01_redis-data-pipeline-with-spy-prices.png
 
-#.  `example-db-extract-and-cache.pynb`_
+#.  `example-db-extract-and-cache.ipynb`_
 
     **Building a Jupyter + MySQL + Redis Data Pipeline**
 
@@ -156,7 +156,7 @@ This document details the following examples. Please refer to the `examples dire
     .. _example-spy-downloader.ipynb: https://github.com/jay-johnson/sci-pype/blob/master/examples/example-spy-downloader.ipynb
     .. _example-plot-stock-data.ipynb: https://github.com/jay-johnson/sci-pype/blob/master/examples/example-plot-stock-data.ipynb
     .. _example-redis-cache-demo.ipynb: https://github.com/jay-johnson/sci-pype/blob/master/examples/example-redis-cache-demo.ipynb
-    .. _example-db-extract-and-cache.pynb: https://github.com/jay-johnson/sci-pype/blob/master/examples/example-db-extract-and-cache.pynb
+    .. _example-db-extract-and-cache.ipynb: https://github.com/jay-johnson/sci-pype/blob/master/examples/example-db-extract-and-cache.ipynb
     .. _downloads the SPY daily pricing data as a csv file: https://github.com/jay-johnson/sci-pype/blob/master/bins/download-spy-csv.py
 
 
@@ -301,8 +301,8 @@ Full Stack
 
 The full-stack-compose.yml_ patches the Jupyter and redis containers to ensure the MySQL database is listening on port 3306 before starting. It does this by defining a custom `entrypoint`_ wrapper for each in the `wait-for-its tools`_ directory.
 
-.. _full-stack-compose.yml: https://github.com/jay-johnson/sci-pype/blob/master/configs/full-stack-compose.yml
-.. _entrypoint: https://github.com/jay-johnson/sci-pype/blob/master/configs/full-stack-compose.yml#L25
+.. _full-stack-compose.yml: https://github.com/jay-johnson/sci-pype/blob/master/full-stack-compose.yml
+.. _entrypoint: https://github.com/jay-johnson/sci-pype/blob/master/full-stack-compose.yml#L25
 .. _wait-for-its tools: https://github.com/jay-johnson/sci-pype/tree/master/wait-for-its
 
 #.  Start the Composition
