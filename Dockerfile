@@ -274,6 +274,7 @@ RUN conda create --quiet --yes -p $CONDA_DIR/envs/python2 python=2.7 \
     'tqdm' \
     'pandas-datareader' \
     'alembic' \
+    'tensorflow' \
     'pyzmq' && \
     conda remove -n python2 --quiet --yes --force qt pyqt && \
     conda clean -tipsy
@@ -331,6 +332,7 @@ RUN conda install --quiet --yes \
     'numpy' \
     'tqdm' \
     'pandas-datareader' \
+    'tensorflow' \
     'alembic'
 
 # R packages including IRKernel which gets installed globally.
