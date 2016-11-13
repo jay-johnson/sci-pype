@@ -373,10 +373,10 @@ RUN echo 'export PATH=$PATH:/opt/work/bins' >> /home/$NB_USER/.bashrc \
     && echo 'export PYTHONPATH=$PYTHONPATH:/opt/work/src' >> /home/$NB_USER/.bashrc
 
 # Add custom Python 2 pips:
-RUN pip2 install slackclient argparse feedparser bs4 logging openpyxl cookiecutter mimeparse constants flup importlib watermark uuid engarde q prettyplotlib dotenv MySQL-python
+RUN pip2 install slackclient argparse feedparser bs4 logging openpyxl cookiecutter mimeparse constants flup importlib watermark uuid engarde q prettyplotlib dotenv MySQL-python pandas-ml
 
 # Add custom Python 3 pips:
-RUN pip3 install slackclient argparse feedparser openpyxl cookiecutter mimeparse constants watermark uuid engarde q prettyplotlib dotenv
+RUN pip3 install slackclient argparse feedparser openpyxl cookiecutter mimeparse constants watermark uuid engarde q prettyplotlib dotenv pandas-ml
 
 ### Finish the setup using root
 USER root
