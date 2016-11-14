@@ -8,7 +8,9 @@ USER root
 # features (e.g., download as all possible file formats)
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update && apt-get install -yq --no-install-recommends \
+RUN apt-get update 
+
+RUN apt-get install -yq --no-install-recommends \
     wget \
     bzip2 \
     ca-certificates \
@@ -49,6 +51,25 @@ RUN apt-get update && apt-get install -yq --no-install-recommends \
     fonts-dejavu \
     gfortran \
     libav-tools \
+    && apt-get clean
+
+RUN apt-get install -yq --no-install-recommends \
+    libatlas-base-dev \
+    libhdf5-serial-dev \
+    libopenblas-dev \
+    libopencv-dev \
+    libprotobuf-dev \
+    liblapack-dev \
+    libleveldb-dev \
+    protobuf-compiler \
+    libsnappy-dev \
+    libboost-all-dev \
+    && apt-get clean
+
+RUN apt-get install -yq --no-install-recommends \
+    libgflags-dev \
+    libgoogle-glog-dev \
+    liblmdb-dev \
     && apt-get clean
 
 RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
@@ -373,10 +394,10 @@ RUN echo 'export PATH=$PATH:/opt/work/bins' >> /home/$NB_USER/.bashrc \
     && echo 'export PYTHONPATH=$PYTHONPATH:/opt/work/src' >> /home/$NB_USER/.bashrc
 
 # Add custom Python 2 pips:
-RUN pip2 install slackclient argparse feedparser bs4 logging openpyxl cookiecutter mimeparse constants flup importlib watermark uuid engarde q prettyplotlib dotenv MySQL-python pandas-ml
+RUN pip2 install slackclient argparse feedparser bs4 logging openpyxl cookiecutter mimeparse constants flup importlib watermark uuid engarde q prettyplotlib dotenv MySQL-python pandas-ml xgboost
 
 # Add custom Python 3 pips:
-RUN pip3 install slackclient argparse feedparser openpyxl cookiecutter mimeparse constants watermark uuid engarde q prettyplotlib dotenv pandas-ml
+RUN pip3 install slackclient argparse feedparser openpyxl cookiecutter mimeparse constants watermark uuid engarde q prettyplotlib dotenv pandas-ml xgboost
 
 ### Finish the setup using root
 USER root
