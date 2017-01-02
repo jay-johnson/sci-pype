@@ -83,7 +83,7 @@ Running Locally without Docker
 
         dev$ cd scipype
 
-#.  Set up a local virtual env using the installer: 
+#.  Set up a local virtual environment using the installer
 
     This will take some time and may fail due to missing packages on your host. Please refer to the `Coming Soon and Known Issues`_ section for help getting passed these issues.
 
@@ -101,13 +101,13 @@ Running Locally without Docker
         source /tmp/scipype/bin/activate
 
 
-#.  Activate the ``scipype`` virtualenv
+#.  Activate the ``scipype`` virtual environment
 
     ::
 
         $ source /tmp/scipype/bin/activate
 
-#.  Confirm your virtual environment is ready for use versions
+#.  Confirm your virtual environment is ready for use
 
     ::
 
@@ -126,15 +126,15 @@ Running Locally without Docker
         xgboost                            0.6a2                                                 
         (scipype) scipype$ 
 
-#.  If you want to always use this environment add this to your ``~/.bashrc``
+#.  If you want to always use this virtual environment add this to your ``~/.bashrc``
 
     ::
 
         echo 'source /tmp/scipype/bin/activate' >> ~/.bashrc
 
-#.  Confirm the Demo downloader works in the VirtualEnv
+#.  Confirm the Demo downloader works in the Virtual Environment
 
-    Please note: this assumes running from a new terminal to validate the VirtualEnv activation
+    Please note: this assumes running from a new terminal to validate the virtual environment activation
 
     Show how to Activate it
 
