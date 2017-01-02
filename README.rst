@@ -7,12 +7,11 @@ Building Scientific Data Pipelines for Jupyter in Docker
 
 .. figure:: https://jaypjohnson.com/_images/image_2016-08-01_building-a-data-science-pipeline.png
 
-Sci-Pype is a framework for building data pipelines. It uses a specialized Jupyter docker container extended from the original https://github.com/jupyter/docker-stacks that already support Python 2, Python 3, R, and Julia notebooks. I use sci-pype for machine learning, data analysis, data-sharing, model refinement, and stock analysis projects. It contains a python 2 core for making it easier to integrate with external databases and redis servers, debugging with slack, and colorized notebook logging.
-
-This core was originally built to datamine news releases in near-real time. Now I use it for analyzing, exchanging and sharing data with Jupyter. With this core, I build machine learning models that are published and persisted as JSON or serialized objects using pickle. These models are deployed and tested with a `load-balanced redis cluster`_. 
+Sci-Pype is a framework for building Python 2.7 data pipelines extended from the `Jupyter Scipy-Notebook`_. It was built to make data analysis easier by providing a central interface for loading and managing datasets from various sources (S3, Redis, MySQL, and Kafka-coming soon). Once a dataset is loaded, it can be analyzed with the common Machine Learning API and graphing support. Common use cases for this framework are sharing analysis notebooks and then automating the predictions to send an email using AWS SES. With the new caching layer, you can build and use Machine Learning Algorithms and Models that are published to S3 and persisted as JSON or serialized, compressed objects using pickle stored in Redis. In production I use a `load-balanced redis cluster`_ for sharing in-memory Models for analysis by multiple people.
 
 Please note this is a `large docker container`_ so it may take some time to download and it extracts to ~6.8 GB on disk.
 
+.. _Jupyter Scipy-Notebook: https://github.com/jupyter/docker-stacks/tree/master/scipy-notebook
 .. _load-balanced redis cluster: https://github.com/jay-johnson/docker-redis-haproxy-cluster
 .. _large docker container: https://hub.docker.com/r/jayjohnson/jupyter/tags/
 
@@ -161,7 +160,7 @@ Running Locally without Docker
         Done Downloading CSV for Ticker(SPY)
         Success File exists: /opt/scipype/data/src/spy.csv
 
-    Decativate it
+    Deactivate it
 
     ::
 
