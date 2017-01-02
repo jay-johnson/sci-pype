@@ -1,4 +1,5 @@
 registry="docker.io"
+version="2.0.0"
 maintainer="jayjohnson"
 basename="jupyter/scipy-notebook"
 imagename="jupyter"
@@ -30,3 +31,10 @@ export ENV_OUTPUT_DIR="/opt/work/data/output"
 export ENV_OUTPUT_BIN="/opt/containerfiles/output-model.sh"
 export ENV_REDIS_MODEL_OUT_BIN="/opt/containerfiles/redis-model.sh"
 export ENV_REDIS_MODEL_DST_KEY="JUPYTER_REDIS_MODEL_DST_KEY"
+
+if [[ "${PYTHONPATH}" == "" ]]; then
+    export PYTHONPATH=/opt/work
+else
+    export PYTHONPATH=${PYTHONPATH}:/opt/work
+fi
+

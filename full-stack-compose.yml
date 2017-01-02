@@ -17,7 +17,7 @@ services:
       - "3307:3306"
 
   jupyter:
-    image: jayjohnson/jupyter:1.0.2
+    image: jayjohnson/jupyter:2.0.0
     container_name: "jupyter"
     hostname: "jupyter"
     depends_on:

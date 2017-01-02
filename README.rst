@@ -69,6 +69,107 @@ This container can run in three modes:
     .. _compose-start-jupyter.sh: https://github.com/jay-johnson/sci-pype/blob/master/compose-start-jupyter.sh
     .. _jupyter-docker-compose.yml: https://github.com/jay-johnson/sci-pype/blob/master/jupyter-docker-compose.yml
 
+Running Locally without Docker
+==============================
+
+#.  Clone the repo without the dash character in the name
+
+    ::
+
+        $ git clone git@github.com:jay-johnson/sci-pype.git scipype
+
+#.  Go to the base dir of the repository
+
+    ::
+
+        dev$ cd scipype
+
+#.  Set up a local virtual env using the installer: 
+
+    This will take some time and may fail due to missing packages on your host. Please refer to the `Coming Soon and Known Issues`_ section for help getting passed these issues.
+
+    ::
+    
+        scipype$ ./setup-new-dev.sh
+
+    After this finishes you should see the lines:
+
+    ::
+
+        ---------------------------------------------------------
+        Activate the new Scipype virtualenv with:
+        
+        source /tmp/scipype/bin/activate
+
+
+#.  Activate the ``scipype`` virtualenv
+
+    ::
+
+        $ source /tmp/scipype/bin/activate
+
+#.  Confirm your virtual environment is ready for use versions
+
+    ::
+
+        (scipype) scipype$ pip list --format=columns | grep -E -i "tensorflow|pandas|redis|kafka|xgboost|scipy|scikit"
+        confluent-kafka                    0.9.2                                                 
+        kafka-python                       1.3.1                                                 
+        pandas                             0.19.2                                                
+        pandas-datareader                  0.2.2                                                 
+        pandas-ml                          0.4.0                                                 
+        redis                              2.10.5                                                
+        scikit-image                       0.12.3                                                
+        scikit-learn                       0.18.1                                                
+        scikit-neuralnetwork               0.7                                                   
+        scipy                              0.18.1                                                
+        tensorflow                         0.12.0                                                
+        xgboost                            0.6a2                                                 
+        (scipype) scipype$ 
+
+#.  If you want to always use this environment add this to your ``~/.bashrc``
+
+    ::
+
+        echo 'source /tmp/scipype/bin/activate' >> ~/.bashrc
+
+#.  Confirm the Demo downloader works in the VirtualEnv
+
+    Please note: this assumes running from a new terminal to validate the VirtualEnv activation
+
+    Show how to Activate it
+
+    ::
+
+        scipype$ ./activate-local.sh 
+        Activate Env with:
+        source /tmp/scipype/bin/activate
+
+    Activate it
+
+    ::
+
+        scipype$ source /tmp/scipype/bin/activate
+
+    Run the Demo
+
+    ::
+
+        (scipype) scipype$ ./bins/demo-running-locally.py 
+        Downloading(SPY) Dates[Jan, 02 2016 - Jan, 02 2017]
+        Storing CSV File(/opt/scipype/data/src/spy.csv)
+        Done Downloading CSV for Ticker(SPY)
+        Success File exists: /opt/scipype/data/src/spy.csv
+
+    Decativate it
+
+    ::
+
+        (scipype) scipype$ deactivate 
+        scipype$ 
+
+
+.. _Coming Soon and Known Issues: https://github.com/jay-johnson/sci-pype/blob/master/README.rst#coming-soon-and-known-issues
 
 Working Examples
 ================
@@ -369,10 +470,10 @@ The full-stack-compose.yml_ patches the Jupyter and redis containers to ensure t
 
         $ ./ssh.sh 
         SSH-ing into Docker image(jupyter)
-        driver:/opt/work$ ps auwwx | grep jupyter
-        driver       1  0.0  0.0  13244  2908 ?        Ss   17:00   0:00 bash /wait-for-its/jupyter-wait-for-it.sh
-        driver      38  0.3  1.2 180564 48068 ?        S    17:00   0:00 /opt/conda/bin/python /opt/conda/bin/jupyter-notebook
-        driver:/opt/work$ exit
+        jovyan:/opt/work$ ps auwwx | grep jupyter
+        jovyan       1  0.0  0.0  13244  2908 ?        Ss   17:00   0:00 bash /wait-for-its/jupyter-wait-for-it.sh
+        jovyan      38  0.3  1.2 180564 48068 ?        S    17:00   0:00 /opt/conda/bin/python /opt/conda/bin/jupyter-notebook
+        jovyan:/opt/work$ exit
 
 #.  Run the Database Extraction Jupyter Demo
 
@@ -505,6 +606,72 @@ From inside the container here is where the directories are mapped:
 
 Coming Soon and Known Issues
 ============================
+
+#.  Local Install Confluent:
+
+    If you're trying to setup the local development environment and missing the kafka headers:
+
+    ::
+
+        In file included from confluent_kafka/src/confluent_kafka.c:17:0:
+        confluent_kafka/src/confluent_kafka.h:21:32: fatal error: librdkafka/rdkafka.h: No such file or directory
+        #include <librdkafka/rdkafka.h>
+
+    Please install Kafka by adding their repository and then installing: 
+    
+    ::
+    
+        $ sudo yum install confluent-platform-oss-2.11
+        $ sudo yum install librdkafka1 librdkafka-devel
+
+    Official RPM Guide: http://docs.confluent.io/3.1.1/installation.html#rpm-packages-via-yum
+
+    Official DEB Guide: http://docs.confluent.io/3.1.1/installation.html#deb-packages-via-apt
+
+#.  Install PyQt4 for ``ImportError: No module named PyQt4`` errors:
+
+	::
+
+		(python2) jovyan:/opt/work/bins$ conda install -y pyqt=4.11
+		Fetching package metadata .........
+		Solving package specifications: ..........
+
+		Package plan for installation in environment /opt/conda/envs/python2:
+
+		The following packages will be downloaded:
+
+			package                    |            build
+			---------------------------|-----------------
+			qt-4.8.7                   |                3        31.3 MB  conda-forge
+			pyqt-4.11.4                |           py27_2         3.5 MB  conda-forge
+			------------------------------------------------------------
+												Total:        34.8 MB
+
+		The following NEW packages will be INSTALLED:
+
+			pyqt: 4.11.4-py27_2 conda-forge
+			qt:   4.8.7-3       conda-forge (copy)
+
+		Pruning fetched packages from the cache ...
+		Fetching packages ...
+		qt-4.8.7-3.tar 100% |##########################################################################################################################################| Time: 0:00:06   5.23 MB/s
+		pyqt-4.11.4-py 100% |##########################################################################################################################################| Time: 0:00:02   1.28 MB/s
+		Extracting packages ...
+		[      COMPLETE      ]|#############################################################################################################################################################| 100%
+		Linking packages ...
+		[      COMPLETE      ]|#############################################################################################################################################################| 100%
+
+
+	Now try running a script from the shell:
+
+	::
+
+		(python2) jovyan:/opt/work/bins$ ./download-spy-csv.py 
+		Downloading(SPY) Dates[Jan, 02 2016 - Jan, 02 2017]
+		Storing CSV File(/opt/work/data/src/spy.csv)
+		Done Downloading CSV for Ticker(SPY)
+		Success File exists: /opt/work/data/src/spy.csv
+		(python2) jovyan:/opt/work/bins$ 
 
 #.  How to build a customized Python Core mounted from outside the Jupyter container
 

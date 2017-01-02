@@ -25,7 +25,7 @@ fi
 
 envfile="./local/jupyter.env"
 
-echo "Starting new Docker image($registry/$maintainer/$imagename)"
+echo "Starting new Docker image($registry/$maintainer/${imagename}:${version})"
 docker run --name=$imagename \
             --env-file $envfile \
             -v $ENV_PROJ_DIR:$ENV_PROJ_DIR \
@@ -39,6 +39,6 @@ docker run --name=$imagename \
             -v $ENV_OUTPUT_DIR:$ENV_OUTPUT_DIR \
             -p 82:8888 \
             -p 444:443 \
-            -d $maintainer/$imagename 
+            -d $maintainer/$imagename:$version
 
 exit 0
