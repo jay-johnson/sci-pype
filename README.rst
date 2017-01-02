@@ -22,9 +22,23 @@ The docker container runs a Jupyter web application. The web application runs `J
 
 .. _Jupyter Notebooks: http://jupyter-notebook.readthedocs.io/en/latest/
 
-This container can run in three modes:
+This container can run in four modes:
 
-#.  Local development
+#.  Default development
+
+    This mode will mount your changes from the repository into the container at runtime for local testing.
+
+    To start the local development version run: dev-start.sh_
+
+    ::
+
+        ./dev-start.sh
+
+    You can login to the container with: ``./ssh.sh``
+    
+    .. _dev-start.sh: https://github.com/jay-johnson/sci-pype/blob/s3_and_machine_learning_api/dev-start.sh
+
+#.  Docker Run Single Container
 
     To start the local development version run: start.sh_
 

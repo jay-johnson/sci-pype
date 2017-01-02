@@ -1,0 +1,22 @@
+version: '2'
+
+services:
+
+  jupyter:
+    image: jayjohnson/jupyter:2.0.0
+    container_name: "jupyter"
+    hostname: "jupyter"
+    env_file: 
+      - ./test/jupyter.env
+    ports:
+      - "82:8888"
+    volumes:
+      - /opt/project:/opt/project
+      - /opt/work:/opt/work
+    networks:
+      - standalonedatapype
+
+networks:
+  standalonedatapype:
+    driver: bridge
+
