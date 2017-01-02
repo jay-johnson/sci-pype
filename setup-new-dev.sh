@@ -8,7 +8,10 @@ if [[ ! -e /opt/work ]]; then
     ln -s $(pwd) /opt/work
     last_status=$?
     if [[ "${last_status}" != "0" ]]; then
-        err "Creating VirtualEnv(${ENV_SCP_VENV_NAME}) Failed. Please confirm virtualenv is setup on this host"
+        err "Creating Scipype repository Symlink(/opt/work) Failed. Please confirm the symlink can be setup on the host before retrying. (check permissions on /opt)"
+        lg ""
+        lg "ln -s $(pwd) /opt/work"
+        lg ""
         exit 1
     fi
 fi
