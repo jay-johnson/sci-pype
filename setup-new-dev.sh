@@ -3,6 +3,16 @@
 source src/common/common-bash.sh .
 source src/common/common-venv.sh .
 
+if [[ ! -e /opt/work ]]; then
+    lg "Creating symlink: ln -s $(pwd) /opt/work"
+    ln -s $(pwd) /opt/work
+    last_status=$?
+    if [[ "${last_status}" != "0" ]]; then
+        err "Creating VirtualEnv(${ENV_SCP_VENV_NAME}) Failed. Please confirm virtualenv is setup on this host"
+        exit 1
+    fi
+fi
+
 lg "Creating VirtualEnv(${ENV_SCP_VENV_NAME}) Path(${ENV_SCP_VENV_PATH})"
 
 pushd $ENV_SCP_VENV_BASE_DIR >> /dev/null

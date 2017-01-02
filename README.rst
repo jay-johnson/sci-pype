@@ -132,23 +132,36 @@ Running Locally without Docker
 
         echo 'source /tmp/scipype/bin/activate' >> ~/.bashrc
 
-#.  Confirm the Demo downloader works in the Virtual Environment
+#.  Update your user's ``PYTHONPATH``
 
-    Please note: this assumes running from a new terminal to validate the virtual environment activation
-
-    Show how to Activate it
+    The ``setup-new-dev.sh`` script will create a symlink that emulates the docker container's volume struture.
 
     ::
 
-        scipype$ ./activate-local.sh 
-        Activate Env with:
-        source /tmp/scipype/bin/activate
+        scipype$ ls -l /opt/ | grep work
+        lrwxrwxrwx  1 driver driver   32 Jan  2 15:56 work -> /home/driver/dev/scipype
+        scipype$ 
+
+    To run the Python 2 source code without being inside the docker container, you will need to add these lines to your ``~/.bashrc`` to automatically setup the Python 2 pathing to find the repository's ``src`` directory just like the docker container.
+
+    ::
+
+        if [[ "${PYTHONPATH}" == "" ]]; then
+            export PYTHONPATH=/opt/work
+        else
+            export PYTHONPATH=${PYTHONPATH}:/opt/work
+        fi
+
+
+#.  Confirm the Demo downloader works in the Virtual Environment
+
+    Please note: this assumes running from a new terminal to validate the virtual environment activation
 
     Activate it
 
     ::
 
-        scipype$ source /tmp/scipype/bin/activate
+        scipype$ source ./properties.sh
 
     Run the Demo
 
@@ -166,6 +179,13 @@ Running Locally without Docker
 
         (scipype) scipype$ deactivate 
         scipype$ 
+
+
+#.  If you want to automatically load the full Scipype environment ``properties.sh`` for any new shell terminal add this to your user's ``~/.bashrc``
+
+    ::
+
+        echo 'source /opt/work/properties.sh' >> ~/.bashrc
 
 
 .. _Coming Soon and Known Issues: https://github.com/jay-johnson/sci-pype/blob/master/README.rst#coming-soon-and-known-issues
