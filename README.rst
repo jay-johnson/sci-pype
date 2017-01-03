@@ -640,6 +640,28 @@ From inside the container here is where the directories are mapped:
 Coming Soon and Known Issues
 ============================
 
+#.  Missing xattr.h
+    
+    If you see this error:
+
+    ::
+
+        xattr.c:29:24: fatal error: attr/xattr.h: No such file or directory
+
+    Install RPM:
+
+    ::
+        
+        sudo yum install -y libattr-devel
+
+    Install Deb:
+
+    ::
+
+        sudo apt-get install -y libattr1-dev
+
+    Retry the install
+
 #.  Local Install Confluent:
 
     If you're trying to setup the local development environment and missing the kafka headers:
@@ -660,6 +682,12 @@ Coming Soon and Known Issues
     Official RPM Guide: http://docs.confluent.io/3.1.1/installation.html#rpm-packages-via-yum
 
     Official DEB Guide: http://docs.confluent.io/3.1.1/installation.html#deb-packages-via-apt
+
+    For ``Fedora 24/RHEL 7/CentOS 7`` users here's a tool to help:
+    
+    ::
+        
+        scipype/python2$ sudo ./install_confluent_platform.sh
 
 #.  Install PyQt4 for ``ImportError: No module named PyQt4`` errors:
 
