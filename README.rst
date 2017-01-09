@@ -1,13 +1,18 @@
-===================================
-Sci-Pype - Jupyter + Redis + Docker
-===================================
+=======================================================================
+Sci-Pype - A Machine Learning Framework for Sharing Models and Analysis
+=======================================================================
 
-Building Scientific Data Pipelines for Jupyter in Docker
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Sci-Pype is a framework for analyzing datasets using Python 2.7 and extended from the `Jupyter Scipy-Notebook`_ and a supported command line version. It was built to make data analysis easier by providing an API to build, train, test, predict, validate, analyze, extract, archive, and import Models and Analysis datasets with: S3 and redis (Kafka coming soon). After building and training the requested Models with a dataset, they are cached in redis along with their respective Analysis. After they are cached, they can be extracted and shared using S3. From S3, the Models can be imported back into redis for making new predictions using the same API. 
 
-.. figure:: https://jaypjohnson.com/_images/image_2016-08-01_building-a-data-science-pipeline.png
+.. figure:: ./examples/images/v2/Scipype-Seaborn-Visuals.png
+    :alt: Sci-Pype - A Machine Learning Framework for Sharing Models and Analysis
+    :align: center
+    
+    Analyzing the IRIS dataset with Sci-Pype
 
-Sci-Pype is a framework for building Python 2.7 data pipelines extended from the `Jupyter Scipy-Notebook`_. It was built to make data analysis easier by providing a central interface for loading and managing datasets from various sources (S3, Redis, MySQL, and Kafka-coming soon). Once a dataset is loaded, it can be analyzed with the common Machine Learning API and graphing support. Common use cases for this framework are sharing analysis notebooks and then automating the predictions to send an email using AWS SES. With the new caching layer, you can build and use Machine Learning Algorithms and Models that are published to S3 and persisted as JSON or serialized, compressed objects using pickle stored in Redis. In production I use a `load-balanced redis cluster`_ for sharing in-memory Models for analysis by multiple people.
+Common use cases for this framework are sharing Analysis notebooks and then automating new predictions with email delivery using AWS SES. With this native caching + deployment layer, you can build, train and use the supported Machine Learning Algorithms and Models across multiple environments (including multi-tenant ones). Once trained, you can extract the Models as a compressed, serialized ``Model file`` (like a build artifact) that is uploaded to S3. Importing a ``Model file`` decompresses the file and stores the Pickle-serialized Models + Analysis objects in redis. In production, it might be useful to house larger Models in something like a `load-balanced redis cluster`_ for sharing and making new predictions across a team or by automation.
+
+A Machine Learning API with native redis caching and export + import using S3. Analyze entire datasets using an API for building, training, testing, analyzing, extracting, importing, and archiving. This repository can run from a docker container or from the repository. 
 
 Please note this is a `large docker container`_ so it may take some time to download and it extracts to ~6.8 GB on disk.
 
@@ -15,10 +20,88 @@ Please note this is a `large docker container`_ so it may take some time to down
 .. _load-balanced redis cluster: https://github.com/jay-johnson/docker-redis-haproxy-cluster
 .. _large docker container: https://hub.docker.com/r/jayjohnson/jupyter/tags/
 
+Notebook Examples
+=================
+
+Please refer to the `examples directory`_ for the latest notebooks. Most of the notebooks and command line tools require running with a redis server listing on port 6000 (``<repo base dir>/dev-start.sh`` will start one). 
+
+.. _examples directory: https://github.com/jay-johnson/sci-pype/tree/master/examples
+
+#.  `ML-IRIS-Analysis-Workflow-Classification.ipynb`_
+
+    Build a unique Machine Learning Classifier (parameterized XGB by default) for each column in the IRIS dataset. After training and testing the Models, perform a general analysis on each column and save + display images generated during each step. After running, the Models + Analysis are Pickled into a set of objects stored in a set of unique redis cache keys. These leaf nodes are organized into a set of redis keys contained in the ``manifest`` node for retrieval as needed in the future (like a tree of Machine Learning Algorithm Models with their associated pre-computed Analysis in memory).
+
+#.  `ML-IRIS-Analysis-Workflow-Regression.ipynb`_
+    
+    Build a unique Machine Learning Regressor (parameterized XGB by default) for each column in the IRIS dataset. After training and testing the Models, perform a general analysis on each column and save + display images generated during each step. After running, the Models + Analysis are Pickled into a set of objects stored in a set of unique redis cache keys. These leaf nodes are organized into a set of redis keys contained in the ``manifest`` node for retrieval as needed in the future (like a tree of Machine Learning Algorithm Models with their associated pre-computed Analysis in memory).
+
+#.  `ML-IRIS-Extract-Models-From-Cache.ipynb`_
+
+    Extract all Models and Analysis records from redis and compile a large Pickle-serialized dictionary. Create a ``manifest`` for decoupling Model + Analysis nodes and compress the dictionary object (using zlib) and write it to disk as a ``Model file`` (``*.cache.pickle.zlib``). After creating the file on disk, upload it to the configured S3 Bucket and Key.
+    
+    Once uploaded to the S3 Bucket you should be able to view, download and share the ``Model files``:
+
+    .. figure:: ./examples/images/scipype_s3_bucket_with_xgb_classifier_and_regressor_models_as_pickled_object_files.png
+
+        S3 Bucket containing the IRIS ``Model Files``
+
+#.  `ML-IRIS-Import-and-Cache-Models-From-S3.ipynb`_
+
+    Download the S3 IRIS ``Model file`` from the configured S3 Bucket + Key and decompress the previously-built Analysis and Models using Pickle to store them all in the redis cache according to the ``manifest``. This includes examples from the IRIS sample dataset and requires you to have a valid S3 Bucket storing the Models and are comfortable paying for the download costs to retrieve the ``Model file`` from S3 (https://aws.amazon.com/s3/pricing/).
+
+#.  `ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Classifier.ipynb`_
+
+    This notebook shows how to make new predictions with cached IRIS Classifier Models + Analysis housed in redis. 
+    
+#.  `ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Regressor.ipynb`_
+
+    This notebook shows how to make new predictions with cached IRIS Regressor Models + Analysis housed in redis. 
+    
+
+Command Line Examples
+=====================
+
+Most of the notebooks and command line tools require running with a redis server listing on port 6000 (``<repo base dir>/dev-start.sh`` will start one). The command line versions that do not require docker or Jupyter can be found:
+
+::
+    
+    <repo base dir>
+    ├── bins
+    │   ├── demo-running-locally.py - Simple validate env is working test
+    │   ├── ml
+    │   │   ├── builders - Build and Train Models then Analyze Predictions without display any plotted images (automation examples)
+    │   │   │   ├── build-classifier-iris.py
+    │   │   │   └── build-regressor-iris.py
+    │   │   ├── demo-ml-classifier-iris.py - Command line version of: ML-IRIS-Analysis-Workflow-Classification.ipynb
+    │   │   ├── demo-ml-regressor-iris.py - Command line version of: ML-IRIS-Analysis-Workflow-Regression.ipynb
+    │   │   ├── downloaders
+    │   │   │   └── download_iris.py - Command line tool for downloading + preparing the IRIS dataset
+    │   │   ├── extractors
+    │   │   │   ├── extract_and_upload_iris_classifier.py - Command line version of: ML-IRIS-Extract-Models-From-Cache.ipynb (Classifier)
+    │   │   │   └── extract_and_upload_iris_regressor.py - Command line version of: ML-IRIS-Extract-Models-From-Cache.ipynb (Regressor)
+    │   │   ├── importers
+    │   │   │   ├── import_iris_classifier.py - ML-IRIS-Import-and-Cache-Models-From-S3.ipynb (Classifier)
+    │   │   │   └── import_iris_regressor.py - ML-IRIS-Import-and-Cache-Models-From-S3.ipynb (Regressor)
+    │   │   └── predictors
+    │   │       ├── predict-from-cache-iris-classifier.py - ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Classifier.ipynb (Classifier)
+    │   │       └── predict-from-cache-iris-regressor.py - ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Regressor.ipynb (Regressor)
+
+
+
+Now you can share, test, and deploy Models  and their respective Analysis from a file in S3 for other Sci-pype users running on different environments.
+
+.. _ML-IRIS-Analysis-Workflow-Classification.ipynb: ./examples/ML-IRIS-Analysis-Workflow-Classification.ipynb
+.. _ML-IRIS-Analysis-Workflow-Regression.ipynb: ./examples/ML-IRIS-Analysis-Workflow-Regression.ipynb
+.. _ML-IRIS-Extract-Models-From-Cache.ipynb: ./examples/ML-IRIS-Extract-Models-From-Cache.ipynb
+.. _ML-IRIS-Import-and-Cache-Models-From-S3.ipynb: ./examples/ML-IRIS-Import-and-Cache-Models-From-S3.ipynb
+.. _ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Classifier.ipynb: ./examples/ML-Predict-IRIS-Classifier-From-Cache.ipnyb_
+.. _ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Regressor.ipynb: ./examples/ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Regressor.ipynb
+
+
 Overview
 ========
 
-The docker container runs a Jupyter web application. The web application runs `Jupyter Notebooks`_ as kernels that can be implemented in Python 2, 3, R, or Julia. For now the examples and core included in this repository will only work with Python 2.
+The docker container runs a Jupyter web application. The web application runs `Jupyter Notebooks`_ as kernels. For now the examples and core included in this repository will only work with Python 2.
 
 .. _Jupyter Notebooks: http://jupyter-notebook.readthedocs.io/en/latest/
 
@@ -85,6 +168,8 @@ This container can run in four modes:
 Running Locally without Docker
 ==============================
 
+Here is how to setup Sci-pype to run locally without using docker (and Lambda deployments in the future).
+
 #.  Clone the repo without the dash character in the name
 
     ::
@@ -112,14 +197,15 @@ Running Locally without Docker
         ---------------------------------------------------------
         Activate the new Scipype virtualenv with:
         
-        source /tmp/scipype/bin/activate
+        source ./dev-properties.sh"
+           or:
+        source ./properties.sh
 
-
-#.  Activate the ``scipype`` virtual environment
+#.  Activate the ``scipype`` virtual environment for development:
 
     ::
 
-        $ source /tmp/scipype/bin/activate
+        $ source ./dev-properties.sh
 
 #.  Confirm your virtual environment is ready for use
 
@@ -204,12 +290,11 @@ Running Locally without Docker
 
 .. _Coming Soon and Known Issues: https://github.com/jay-johnson/sci-pype/blob/master/README.rst#coming-soon-and-known-issues
 
-Working Examples
-================
+Previous Examples
+=================
 
-This document details the following examples. Please refer to the `examples directory`_ for the latest. 
-
-.. _examples directory: https://github.com/jay-johnson/sci-pype/tree/master/examples
+Version 1 Examples:
+-------------------
 
 #.  `example-core-demo.ipynb`_ 
 
@@ -308,7 +393,7 @@ Components
 
 #.  Local Redis Server
 
-    When starting the container with ``ENV_DEPLOYMENT_TYPE`` set to anything not ``JustDB``, the container will start a local redis server inside the container on port ``6000`` for iterating on your pipeline analysis, model deployment and caching strategies.
+    When starting the container with ``ENV_DEPLOYMENT_TYPE`` set to anything not ``JustDB``, the container will start a local redis server inside the container on port ``6000`` for iterating on your pipeline analysis, Model deployment and caching strategies.
 
 #.  Loading Database and Redis Applications
 
@@ -758,13 +843,38 @@ Coming Soon and Known Issues
 
     For now just shutdown the notebook kernel if you see an error related to the stocks database not being there when running the full stack.
 
+Coming Soon
+===========
+
+-   Examples for using the Timestamp Forecasting API
+
+-   Post Processing Event API support
+
+-   Confluent Kafka integration notebooks (the python client is already installed in the virtual env and docker container https://github.com/confluentinc/confluent-kafka-python)
+
+-   PySpark integration notebooks
+
+-   Tensorflow integration notebooks
+
+-   Adding more support and optional third-party mounting for customized Machine Learning Algorithms (like https://github.com/pandas-ml/pandas-ml)
+
+-   Odo (http://odo.readthedocs.io/en/latest/) examples 
+
+-   Lambda deployment integration (http://docs.aws.amazon.com/lambda/latest/dg/lambda-python-how-to-create-deployment-package.html) and likely FPM (https://github.com/jordansissel/fpm) for package building.
+
 License
 =======
 
-This repo is MIT
+This project is not related to SciPy.org or the scipy library. It was originally built for exchanging and loading datasets using Redis for creating near-realtime data pipelines for streaming analysis (like a scientific pypeline).
+
+This repo is Apache 2.0 License: https://github.com/jay-johnson/sci-pype/blob/master/LICENSE
 
 Jupyter - BSD: https://github.com/jupyter/jupyter/blob/master/LICENSE
 
+Please refer to the Conda Licenses for individual Python libraries: https://docs.continuum.io/anaconda/pkg-docs
 
+Redis - https://redis.io/topics/license
+
+zlib - https://opensource.org/licenses/zlib-license.php
 
 

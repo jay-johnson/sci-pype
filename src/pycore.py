@@ -1465,7 +1465,8 @@ class PyCore:
 
 
     def pd_add_footnote(self, fig):
-        fig.text(0.99, 0.01, "Your Custom Footnote", ha="right", va="bottom", fontsize=8, color="#888888")
+        footnote_text   = str(os.getenv("ENV_PLOT_FOOTNOTE", "Your Footnote"))
+        fig.text(0.99, 0.01, footnote_text, ha="right", va="bottom", fontsize=8, color="#888888")
     # end of pd_add_footnote
 
 
@@ -1693,17 +1694,17 @@ class PyCore:
             cur_keys        = self.aws_get_keys(debug)
             cur_filename    = "/tmp/" + record["File"]
 
-            file_path           = cur_filename
+            file_path       = cur_filename
             if compress_json:
-                temp_output     = "/tmp/tmpfile_" + datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S") + "_"
-                temp_file       = self.log_msg_to_unique_file(data_json, temp_output)
+                temp_output = "/tmp/tmpfile_" + datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S") + "_"
+                temp_file   = self.log_msg_to_unique_file(data_json, temp_output)
                 os.system("mv " + str(temp_file) + " " + str(cur_filename))
             else:
                 file_path   = self.write_json_to_file(cur_filename, data_json)
 
             import boto, math
             import boto.s3
-
+    
             conn_s3         = boto.connect_s3(cur_keys["Key"], cur_keys["Secret"])
             bucket          = conn_s3.get_bucket(bucketname, validate=False)
             cur_filename    = os.path.basename(file_path)
@@ -1714,10 +1715,10 @@ class PyCore:
             chunks_count    = int(math.ceil(source_size / float(bytes_per_chunk)))
 
             for i in range(chunks_count):
-                offset          = i * bytes_per_chunk
+                offset      = i * bytes_per_chunk
                 remaining_bytes = source_size - offset
-                bytes           = min([bytes_per_chunk, remaining_bytes])
-                part_num        = i + 1
+                bytes       = min([bytes_per_chunk, remaining_bytes])
+                part_num    = i + 1
 
                 self.lg("S3 Uploading(" + str(cur_filename) + ") part " + str(part_num) + " of " + str(chunks_count), 6)
 
@@ -1791,10 +1792,10 @@ class PyCore:
             chunks_count    = int(math.ceil(source_size / float(bytes_per_chunk)))
 
             for i in range(chunks_count):
-                offset          = i * bytes_per_chunk
+                offset      = i * bytes_per_chunk
                 remaining_bytes = source_size - offset
-                bytes           = min([bytes_per_chunk, remaining_bytes])
-                part_num        = i + 1
+                bytes       = min([bytes_per_chunk, remaining_bytes])
+                part_num    = i + 1
 
                 self.lg("S3 Uploading(" + str(cur_filename) + ") part " + str(part_num) + " of " + str(chunks_count), 6)
 
@@ -1803,14 +1804,14 @@ class PyCore:
                     mp.upload_part_from_file(fp=fp, part_num=part_num, size=bytes)
             # end of writing multipart files
 
-            record["Size"]      = str(source_size)
+            record["Size"]  = str(source_size)
 
             if len(mp.get_all_parts()) == chunks_count:
                 mp.complete_upload()
-                results         = self.build_def_hash("SUCCESS", "", record)
+                results     = self.build_def_hash("SUCCESS", "", record)
             else:
                 mp.cancel_upload()
-                results         = self.build_def_hash("Display Error", "Failed to Upload", record)
+                results     = self.build_def_hash("Display Error", "Failed to Upload", record)
 
             if os.path.exists(cur_filename):
                 os.system("rm -f " + str(cur_filename))
@@ -1889,6 +1890,88 @@ class PyCore:
 
         return results
     # end of s3_upload_csv_dataset
+
+
+    def s3_upload_file(self, req, debug=False):
+
+        record              = {
+                                "File"  : "",
+                                "Size"  : "0"
+                            }
+
+        results             = self.build_def_hash("Display Error", "Not Run", record)
+
+        try:
+
+            cur_keys        = self.aws_get_keys(debug)
+
+            import boto, math
+            import boto.s3
+
+            """
+            req             = {
+                                "SaveToFile"    : <path to file>,
+                                "S3Loc"         : <bucket>:<key>,
+                                "DeleteAfter"   : boolean
+                            }
+            """
+
+            s3_split        = str(req["S3Loc"]).split(":")
+            s3_bucket       = str(s3_split[0])
+            s3_key          = str(s3_split[1])
+
+            savepath        = str(req["SaveToFile"])
+            delete_after    = False
+            if "DeleteAfter" in req:
+                delete_after= bool(req["DeleteAfter"])
+
+            conn_s3         = boto.connect_s3(cur_keys["Key"], cur_keys["Secret"])
+            bucket          = conn_s3.get_bucket(s3_bucket, validate=False)
+            filename        = os.path.basename(savepath)
+            k               = bucket.new_key(s3_key)
+            mp              = bucket.initiate_multipart_upload(filename)
+            source_size     = os.stat(savepath).st_size
+            bytes_per_chunk = 5000*1024*1024
+            chunks_count    = int(math.ceil(source_size / float(bytes_per_chunk)))
+
+            for i in range(chunks_count):
+                offset      = i * bytes_per_chunk
+                remaining_bytes = source_size - offset
+                bytes       = min([bytes_per_chunk, remaining_bytes])
+                part_num    = i + 1
+
+                self.lg("S3 Uploading(" + str(filename) + ") part " + str(part_num) + " of " + str(chunks_count), 6)
+
+                with open(savepath, 'r') as fp:
+                    fp.seek(offset)
+                    mp.upload_part_from_file(fp=fp, part_num=part_num, size=bytes)
+            # end of writing multipart files
+            
+            record["Size"]  = str(source_size)
+
+            if len(mp.get_all_parts()) == chunks_count:
+                mp.complete_upload()
+                results     = self.build_def_hash("SUCCESS", "", record)
+            else:
+                mp.cancel_upload()
+                results     = self.build_def_hash("Display Error", "Failed to Upload", record)
+
+            if delete_after:
+                if os.path.exists(savepath):
+                    os.system("rm -f " + str(savepath))
+
+                if os.path.exists(savepath):
+                    os.system("rm -f " + str(savepath))
+
+        except Exception,k:
+            status          = "FAILED"
+            err_msg         = "Unable to Upload File(" + str(json.dumps(req)) + ") to S3 with Ex(" + str(k) + ")"
+            self.lg("ERROR: " + str(err_msg), 0)
+            results         = self.build_def_hash("Display Error", err_msg, {})
+        # end of try/ex
+
+        return results
+    # end of s3_upload_file
 
 
     def s3_calculate_bucket_size(self, bucket_name, debug=False):
@@ -1980,7 +2063,7 @@ class PyCore:
             s3_key          = s3_bucket.get_key(s3_key_name, validate=False)
 
             self.lg("Downloading S3Loc(" + str(s3_bucket_name) + ":" + str(s3_key_name) + ")", 6)
-            key_results     = self.ml_download_file_from_s3(s3_bucket, s3_key, rds, dbs, debug)
+            key_results     = self.s3_download_file(s3_bucket, s3_key, rds, dbs, debug)
 
             self.lg("Done Downloading S3Loc(" + str(s3_bucket_name) + ":" + str(s3_key_name) + ") Writing to File(" + str(local_file) + ") Bytes(" + str(len(str(key_results["Record"]["Contents"]))) + ")", 6)
 
@@ -2035,7 +2118,7 @@ class PyCore:
                                     "Models"    : []
                                 }
             
-        results                 = self.build_def_hash("Display Error", "Failed to Get Convert Modesl to Objects", record )
+        results                 = self.build_def_hash("Display Error", "Failed to Get Convert Models to Objects", record )
 
         try:
             
@@ -2094,12 +2177,15 @@ class PyCore:
 
             import pickle, cPickle, zlib
 
+            ra_name             = "CACHE"
+            ra_key              = ""
+
             dataset_name        = ""
             dataset_name        = self.to_upper(str(req["DSName"]))
             s3_bucket           = str(req["S3Loc"].split(":")[0])
             s3_key              = str(req["S3Loc"].split(":")[1])
             model_file          = str(req["ModelFile"])
-            tracking_type       = "UseTargetColAndDays"
+            tracking_type       = "UseTargetColAndUnits"
             if "TrackingType" in req:
                 tracking_type   = str(req["TrackingType"])
 
@@ -2110,7 +2196,6 @@ class PyCore:
                 return self.handle_display_error(err_msg, record, True)
 
             model_stream        = cPickle.loads(zlib.decompress(open(model_file).read()))
-
 
             if len(model_stream) == 0:
                 err_msg = "Decompressed ModelFile(" + str(model_file) + ") is Empty"
@@ -2163,15 +2248,17 @@ class PyCore:
                     tracking_data.update(model_stream["Tracking"])
 
                 tracking_id         = str(tracking_data["TrackingID"])
+                ra_name             = tracking_data["RLoc"].split(":")[0]
                 ra_key              = tracking_data["RLoc"].split(":")[1]
 
                 analysis_dataset["Tracking"] = tracking_data
-
+            
                 cache_req           = {
-                                        "Name"          : "CACHE",
+                                        "Name"          : ra_name,
                                         "Key"           : ra_key,
                                         "TrackingID"    : tracking_id,
-                                        "Analysis"      : analysis_dataset
+                                        "Analysis"      : analysis_dataset,
+                                        "ValidateDates" : False
                                     }
                 cache_results       = self.ml_cache_analysis_and_models(cache_req, rds, dbs, debug)
             # end of valid stream
@@ -2201,7 +2288,7 @@ class PyCore:
                                 }
         
         tracking_version        = 1
-        tracking_type           = "UseTargetColAndDays"
+        tracking_type           = "UseTargetColAndUnits"
         tracking_id             = ""
         tracking_name           = tracking_id
         ra_name                 = "CACHE"
@@ -2210,7 +2297,7 @@ class PyCore:
         if "TrackingType" in req:
             tracking_type       = str(req["TrackingType"])
 
-        if str(tracking_type) == "UseTargetColAndDays":
+        if str(tracking_type) == "UseTargetColAndUnits":
 
             if "Tracking" in req:
                 tracking_id         = "_MD_" + str(req["Tracking"]["TrackingName"])
@@ -2220,9 +2307,9 @@ class PyCore:
             else:
                 if "TrackingName" in req:
                     tracking_id         = "_MD_" + str(req["TrackingName"])
-                    tracking_name       = "_MD_" + str(["TrackingName"])
+                    tracking_name       = "_MD_" + str(req["TrackingName"])
                     ra_key              = "_MODELS_" + str(req["TrackingName"]) + "_LATEST"
-
+                
         if "MLAlgo" in req: # tracking nodes should support passing the parent ml json api through
             
             data_node                       = {}
@@ -2233,6 +2320,22 @@ class PyCore:
 
             tracking_node["Data"]           = data_node
         # end of passing the org algo through
+
+        if tracking_name == "":
+            lg("", 6)
+            lg("Debugging help:", 6)
+            for k in req:
+                lg("  Key(" + str(k) + ")", 0)
+            lg("", 6)
+            raise Exception("Failed ml_build_tracking_id - Please confirm the TrackingName is set correctly")
+
+        if tracking_id == "":
+            lg("", 6)
+            lg("Debugging help:", 6)
+            for k in req:
+                lg("  Key(" + str(k) + ")", 0)
+            lg("", 6)
+            raise Exception("Failed ml_build_tracking_id - Please confirm the TrackingID is set correctly")
 
         tracking_node["TrackingID"]         = tracking_id
         tracking_node["TrackingVersion"]    = tracking_version
@@ -2251,26 +2354,40 @@ class PyCore:
                                     "Models"    : []
                                 }
             
-        results                 = self.build_def_hash("Display Error", "Failed to Get Convert Modesl to Objects", record )
+        results                 = self.build_def_hash("Display Error", "Failed to Upload Cached Dataset to S3", record )
 
         try:
 
             import pickle, cPickle, zlib
 
-            dataset_name        = ""
+            compress_data       = True
             dataset_name        = self.to_upper(str(req["DSName"]))
             s3_bucket           = str(req["S3Loc"].split(":")[0])
             s3_key              = str(req["S3Loc"].split(":")[1])
-            image_base_dir      = "/media/sf_shared/"
-            if os.path.exists(image_base_dir) == False:
-                image_base_dir  = "/opt/work/data/dst/"
 
-            tmp_file            = image_base_dir + s3_key
+            delete_after        = False
+            if "DeleteAfter" in req:
+                delete_after    = bool(req["DeleteAfter"])
+
+            image_base_dir      = str(os.getenv("ENV_DATA_SRC_DIR", "/opt/work/data/dst"))
+            if "SaveDir" in req:
+                image_base_dir  = str(req["SaveDir"])
+
+            if not os.path.exists(image_base_dir):
+                err_msg = "Unable to export because the SaveDir(" + str(image_base_dir) + ") does not exist. Please create it and retry."
+                return self.handle_display_error(err_msg, record, True)
+
+            tmp_file            = image_base_dir + "/" + s3_key
+            ra_name             = "CACHE"
+            ra_key              = ""
+            if "RLoc" in req:
+                ra_name         = str(req["RLoc"]).split(":")[0]
+                ra_key          = str(req["RLoc"]).split(":")[1]
 
             model_req           = {
                                     "DSName"        : dataset_name,
                                     "TrackingID"    : "",
-                                    "RAName"        : "CACHE",
+                                    "RAName"        : ra_name,
                                     "ReturnPickle"  : True
                                 }
             
@@ -2298,11 +2415,19 @@ class PyCore:
 
                     lg("Done Creating File(" + str(tmp_file) + ")", 6)
 
-                    lg("Uploading to DSName(" + str(dataset_name) + ") Analysis to S3(" + str(s3_bucket) + ":" + str(s3_key) + ")", 6)
-                    upload_results  = self.ml_upload_csv_dataset(tmp_file, rds, dbs, s3_bucket, s3_key, False, debug)
+                    s3_loc          = str(s3_bucket) + ":" + str(s3_key)
+                    lg("Uploading to DSName(" + str(dataset_name) + ") Analysis to S3(" + str(s3_loc) + ")", 6)
+
+                    req             = {
+                                        "SaveToFile"    : tmp_file,
+                                        "S3Loc"         : s3_loc,
+                                        "DeleteAfter"   : delete_after
+                                    }
+
+                    upload_results  = self.s3_upload_file(req, debug)
 
                     if upload_results["Status"] != "SUCCESS":
-                        lg("ERROR: Failed to upload S3 DSName(" + str(dataset_name) + ") new S3 File(" + str(s3_key) + ") Bucket(" + str(s3_bucket) + ") Compressed(" + str(compress_json) + ") Error(" + str(upload_results["Error"]) + ")", 0)
+                        lg("ERROR: Failed to upload S3 DSName(" + str(dataset_name) + ") new S3 File(" + str(s3_key) + ") Bucket(" + str(s3_bucket) + ") Compressed(" + str(compress_data) + ") Error(" + str(upload_results["Error"]) + ")", 0)
                     else:
                         lg("Uploaded DSName(" + str(dataset_name) + ") S3(" + str(s3_bucket) + ":" + str(s3_key) + ")", 5)
                     # end of uploading Dataset Name snapshot
@@ -2364,8 +2489,7 @@ class PyCore:
         if "ModelRAKeySuffix" in cached_model_node:
             model_cache_suffix_key  = str(cached_model_node["ModelRAKeySuffix"])
 
-        if tracking_type == "UseTargetColAndDays":
-            model_ra_name           = str(tracking_rloc[0])
+        if tracking_type == "UseTargetColAndUnits":
             model_ra_name           = str(tracking_rloc[0])
             model_cache_key         = str(tracking_id) + "_" + str(model_cache_suffix_key)
                     
@@ -2423,8 +2547,8 @@ class PyCore:
                 ret_pickle_obj  = True
 
             cache_key           = "_MODELS_" + str(dataset_name) + "_LATEST"
-            
-            manifest_cache_rec = self.get_cache_from_redis(rds[ra_name], cache_key, False, False)
+
+            manifest_cache_rec  = self.get_cache_from_redis(rds[ra_name], cache_key, False, False)
 
             if len(manifest_cache_rec["Record"]) > 0:
 
@@ -2519,14 +2643,17 @@ class PyCore:
             tracking_rloc                   = str(tracking_node["RLoc"]).split(":")
             ra_name                         = str(tracking_rloc[0])
             cache_key                       = str(tracking_rloc[1])
+            run_date_validation             = True
+            if "ValidateDates" in req:
+                run_date_validation         = bool(req["ValidateDates"])
             cache_record                    = {
                                                 "Date"              : str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
                                                 "Models"            : [],
                                                 "Accuracy"          : [],
                                                 "PredictionsDF"     : []
                                             }
-            accuracy_cache_key              = tracking_node["TrackingID"] + "_" + "Accuracy"
-            predictionsdf_cache_key         = tracking_node["TrackingID"] + "_" + "PredictionsDF"
+            accuracy_cache_key              = tracking_id + "_" + "Accuracy"
+            predictionsdf_cache_key         = tracking_id + "_" + "PredictionsDF"
             
             accuracy_manifest               = [
                                                 {
@@ -2583,7 +2710,7 @@ class PyCore:
                 model_cache_key             = str(m["ID"])
                 model_cache_key             = str(req["TrackingID"]) + "_" + str(num_done) # Allow these to stomp to prevent overrunning the memory
 
-                if tracking_type == "UseTargetColAndDays":
+                if tracking_type == "UseTargetColAndUnits":
                     model_cache_key         = tracking_id + "_" + str(model_cache_rec["ModelRAKeySuffix"])
 
                 lg("Caching Model(" + str(num_done) + ") ID(" + str(m["ID"]) + ") RLoc(" + str(ra_name) + ":" + str(model_cache_key) + ")", 6)
@@ -2592,20 +2719,20 @@ class PyCore:
                                             model_cache_rec,
                                             False)
                 lg("Done Caching Model(" + str(num_done) + ") ID(" + str(m["ID"]) + ") RLoc(" + str(ra_name) + ":" + str(cache_key) + ")", 6)
-                new_manifest_node   = {
-                                        "Type"              : model_class_name,
-                                        "Version"           : model_version,
-                                        "RAName"            : ra_name,
-                                        "RAKey"             : model_cache_key,
-                                        "Target"            : m["Target"],
-                                        "AlgoTracking"      : tracking_node,
-                                        "ModelRAKeySuffix"  : str(model_cache_rec["ModelRAKeySuffix"]),
-                                        "FeatureNames"      : m["FeatureNames"],
-                                        "ID"                : str(m["ID"])
-                                    }
+                new_manifest_node           = {
+                                                "Type"              : model_class_name,
+                                                "Version"           : model_version,
+                                                "RAName"            : ra_name,
+                                                "RAKey"             : model_cache_key,
+                                                "Target"            : m["Target"],
+                                                "AlgoTracking"      : tracking_node,
+                                                "ModelRAKeySuffix"  : str(model_cache_rec["ModelRAKeySuffix"]),
+                                                "FeatureNames"      : m["FeatureNames"],
+                                                "ID"                : str(m["ID"])
+                                            }
                 cache_record["Models"].append(new_manifest_node)
 
-                num_done            += 1
+                num_done                    += 1
             # end for all models to compress
 
             self.lg("Preprocessing Accuracy Results", 6)
@@ -2615,10 +2742,13 @@ class PyCore:
             for key_name in req["Analysis"]["AccuracyResults"]:
                 cur_node                    = {}
                 for acc_res_key in req["Analysis"]["AccuracyResults"][key_name]:
+
+                    # Ignore these as they just increase the cache size 
                     if "model" != str(acc_res_key).lower() \
                         and "sourcedf" != str(acc_res_key).lower() \
                         and "predictions" != str(acc_res_key).lower() \
-                        and "predictionsdf" != str(acc_res_key).lower():
+                        and "predictionsdf" != str(acc_res_key).lower() \
+                        and "confusionmatrix" != str(acc_res_key).lower():
 
                         self.lg("Adding Acc(" + str(key_name) + "-" + str(acc_res_key) + ")", 6)
                         cur_node[acc_res_key]   = req["Analysis"]["AccuracyResults"][key_name][acc_res_key]
@@ -2677,17 +2807,20 @@ class PyCore:
 
                     if len(validate_records["Record"]["Models"]) == len(cache_record["Models"]):
                         self.lg("Validated Compressed Cache Records with Models(" + str(len(validate_records["Record"]["Models"])) + ")", 6)
-                        lg("Validated Compressed Cache Records with Models(" + str(len(validate_records["Record"]["Models"])) + ")", 5)
-                        print validate_records["Record"]["Models"][0]["Model"]
+                        if debug:
+                            lg("Validated Compressed Cache Records with Models(" + str(len(validate_records["Record"]["Models"])) + ")", 5)
+                            print validate_records["Record"]["Models"][0]["Model"]
                     else:
                         err_msg     = "Failed to validate Compressed Cache Record Models(" + str(len(validate_records["Record"]["Models"])) + ") != Models(" + str(len(cache_record["Models"])) + ")"
                         return self.handle_display_error(err_msg, record, True)
                 else:
-                    err_msg         = "Failed to validate Compressed Cache Record Date(" + str(validate_records["Record"]["CreationDate"]) + ") != CreationDate(" + str(creation_date) + ")"
-                    return self.handle_display_error(err_msg, record, True)
+
+                    if run_date_validation:
+                        err_msg         = "Failed to validate Compressed Cache Record Date(" + str(validate_records["Record"]["CreationDate"]) + ") != CreationDate(" + str(creation_date) + ")"
+                        return self.handle_display_error(err_msg, record, True)
             # end of validation of compressed cache
 
-            self.lg("Done Caching Analysis and Models(" + str(len(cache_record["Models"])) + ") RLoc(" + str(ra_name) + ":" + str(cache_key) + ")", 5)
+            self.lg("Done Caching Analysis and Models(" + str(len(cache_record["Models"])) + ") RLoc(" + str(ra_name) + ":" + str(cache_key) + ")", 6)
 
             results                 = self.build_def_hash("SUCCESS", "", record)
 
@@ -2749,7 +2882,143 @@ class PyCore:
         return results
     # end of ml_cache_model
 
+
+    def ml_encode_target_column(self, df, target_column, result_column, debug=False):
+        
+	import pandas as pd
+
+        success = False
+        
+        if result_column in df:
+            lg("Already Have Column(" + str(result_column) + ")", 6)
+	    return (success, df, [])
+
+	# Add column to df with integers for the target.
+
+        # make a copy of the df
+	df_mod  = df.copy()
+
+        # find the uniques in the target column
+	targets     = df_mod[target_column].unique()
+
+        # convert to a dict of names to int values
+	map_to_int  = {name: n for n, name in enumerate(targets)}
+
+        # replace the result column with the correct integer values
+	df_mod[result_column] = df_mod[target_column].replace(map_to_int)
+
+        success     = True
     
+	return (success, df_mod, targets)
+    # end of ml_encode_target_column
+
+    
+    def ml_is_valid_classifier_request(self, req):
+
+        status      = "Failed Validation"
+        err_msg     = ""
+        record      = {}
+        
+        if "TargetColumnName" not in req:
+            err_msg = "Classifier Error - Missing required 'TargetColumnName' parameter. Please set it to the name of the column you want the machine to learn."
+        # end of TargetColumnName
+
+        if "TrainFeatureNames" not in req:
+            err_msg = "Classifier Error - Missing required 'TrainFeatureNames' parameter. Please set it to a list of feature names you want to be trained in the model."
+        # end of TargetColumnName
+
+        if "FeaturesTrain" not in req:
+            err_msg = "Classifier Error - Missing required 'FeaturesTrain' parameter. Please set it to the features_train result from: features_train, features_test, target_train, target_test = train_test_split(features, train_df[target_col], test_size=test_ratio)."
+        # end of FeaturesTrain
+
+        if "FeaturesTest" not in req:
+            err_msg = "Classifier Error - Missing required 'FeaturesTest' parameter. Please set it to the features_test result from: features_train, features_test, target_train, target_test = train_test_split(features, train_df[target_col], test_size=test_ratio)."
+        # end of FeaturesTest
+
+        if "TargetTrain" not in req:
+            err_msg = "Classifier Error - Missing required 'TargetTrain' parameter. Please set it to the target_train result from: features_train, features_test, target_train, target_test = train_test_split(features, train_df[target_col], test_size=test_ratio)."
+        # end of TargetTrain
+
+        if "TargetTest" not in req:
+            err_msg = "Classifier Error - Missing required 'TargetTest' parameter. Please set it to the target_test result from: features_train, features_test, target_train, target_test = train_test_split(features, train_df[target_col], test_size=test_ratio)."
+        # end of TargetTest
+
+        if "MLType" not in req:
+            err_msg = "Classifier Error - Missing required 'MLType' parameter. Please set it to a name."
+        # end of MLType
+        
+        if "MLAlgo" not in req:
+            err_msg = "Classifier Error - Missing required 'MLAlgo' parameter. Please set it to a dictionary for building the Machine Learning Algorithm."
+        # end of MLAlgo
+
+        if "Name" not in req["MLAlgo"]:
+            err_msg = "Classifier Error - Missing required 'Name' parameter under 'MLAlgo'. Please set it to a name for the algorithm object."
+        # end of MLAlgo.Name
+
+        if "Steps" not in req["MLAlgo"]:
+            err_msg = "Classifier Error - Missing required 'Steps' parameter under 'MLAlgo'. Please set it to a dictionary for the algorithm to run."
+        # end of MLAlgo.Steps
+
+        if err_msg == "":
+            status  = "SUCCESS"
+
+        return self.build_def_hash(status, err_msg, record)
+    # end of ml_is_valid_classifier_request
+
+
+    def ml_is_valid_regression_request(self, req):
+
+        status      = "Failed Validation"
+        err_msg     = ""
+        record      = {}
+        
+        if "TargetColumnName" not in req:
+            err_msg = "Regressor Error - Missing required 'TargetColumnName' parameter. Please set it to the name of the column you want the machine to learn."
+        # end of TargetColumnName
+
+        if "TrainFeatureNames" not in req:
+            err_msg = "Regressor Error - Missing required 'TrainFeatureNames' parameter. Please set it to a list of feature names you want to be trained in the model."
+        # end of TargetColumnName
+
+        if "FeaturesTrain" not in req:
+            err_msg = "Regressor Error - Missing required 'FeaturesTrain' parameter. Please set it to the features_train result from: features_train, features_test, target_train, target_test = train_test_split(features, train_df[target_col], test_size=test_ratio)."
+        # end of FeaturesTrain
+
+        if "FeaturesTest" not in req:
+            err_msg = "Regressor Error - Missing required 'FeaturesTest' parameter. Please set it to the features_test result from: features_train, features_test, target_train, target_test = train_test_split(features, train_df[target_col], test_size=test_ratio)."
+        # end of FeaturesTest
+
+        if "TargetTrain" not in req:
+            err_msg = "Regressor Error - Missing required 'TargetTrain' parameter. Please set it to the target_train result from: features_train, features_test, target_train, target_test = train_test_split(features, train_df[target_col], test_size=test_ratio)."
+        # end of TargetTrain
+
+        if "TargetTest" not in req:
+            err_msg = "Regressor Error - Missing required 'TargetTest' parameter. Please set it to the target_test result from: features_train, features_test, target_train, target_test = train_test_split(features, train_df[target_col], test_size=test_ratio)."
+        # end of TargetTest
+
+        if "MLType" not in req:
+            err_msg = "Regressor Error - Missing required 'MLType' parameter. Please set it to a name."
+        # end of MLType
+        
+        if "MLAlgo" not in req:
+            err_msg = "Regressor Error - Missing required 'MLAlgo' parameter. Please set it to a dictionary for building the Machine Learning Algorithm."
+        # end of MLAlgo
+
+        if "Name" not in req["MLAlgo"]:
+            err_msg = "Regressor Error - Missing required 'Name' parameter under 'MLAlgo'. Please set it to a name for the algorithm object."
+        # end of MLAlgo.Name
+
+        if "Steps" not in req["MLAlgo"]:
+            err_msg = "Regressor Error - Missing required 'Steps' parameter under 'MLAlgo'. Please set it to a dictionary for the algorithm to run."
+        # end of MLAlgo.Steps
+
+        if err_msg == "":
+            status  = "SUCCESS"
+
+        return self.build_def_hash(status, err_msg, record)
+    # end of ml_is_valid_regression_request
+
+
     def ml_is_valid_train_and_test_set(self, ml_request):
 
         import pandas as pd
@@ -2781,7 +3050,9 @@ class PyCore:
         ml_type                         = str(req["MLType"])
         ml_algo_name                    = str(req["MLAlgo"]["Name"])
         target_column_name              = str(req["TargetColumnName"])
-        target_names                    = req["TargetNames"]
+        target_column_values            = req["TargetColumnValues"]
+        ignore_features                 = req["IgnoreFeatures"]
+        ml_dataset_name                 = ""
         algo_meta_data                  = {}
         train_api_node                  = {}
         cross_val_api_node              = {}
@@ -2790,9 +3061,14 @@ class PyCore:
         predictproba_api_node           = {}
         plot_api_node                   = {}
         cache_api_node                  = {}
+        post_proc_api_node              = {}
 
         debug                           = False
         max_features                    = 10
+        
+        if "Meta" in req["MLAlgo"]:
+            if len(req["MLAlgo"]["Meta"]) > 0:
+                algo_meta_data          = req["MLAlgo"]["Meta"]
         
         if "MaxFeatures" in req["MLAlgo"]:
             max_features                = int(req["MaxFeatures"])
@@ -2833,6 +3109,12 @@ class PyCore:
         if "Plot" in req["MLAlgo"]:
             if len(req["MLAlgo"]["Plot"]) > 0:
                 plot_api_node           = req["MLAlgo"]["Plot"]
+        # end of processing Plot api
+        
+        if "PostProcessing" in algo_meta_data:
+            if len(algo_meta_data["PostProcessing"]) > 0:
+                post_proc_api_node      = algo_meta_data["PostProcessing"]
+        # end of processing PostProcessing api
         
         if "Debug" in req:
             debug                       = bool(req["Debug"])
@@ -2843,6 +3125,7 @@ class PyCore:
                         "Name"      : str(ml_algo_name),
                         "TTRatio"   : 0.1,
                         "Meta"      : {
+                            "DSName"    : str(ml_dataset_name),
                             "Src"       : { # Where's the data coming from?
                                 "CSVFile"       : "",
                                 "S3File"        : "",
@@ -2853,13 +3136,13 @@ class PyCore:
                                 "S3Key"         : "",
                                 "S3Bucket"      : ""
                             },
-                            "IgnoreFeatures"    : [
+                            "IgnoreFeatures"          : [ # What feature columns should be removed? (strings/dates)
                             ],
-                            "TargetNames"             : [ # Classifier - What do the Target values logically represent
+                            "TargetColumnValues"      : [ # What do the target values logically represent?
                             ],
-                            "TargetPredictionMapping" : { # Classifier - What did the Target Predict?
+                            "TargetPredictionMapping" : { # What did the target predict?
                             },
-                            "TargetResultMapping"     : { # Classifier - Was the Target Prediction Correct?
+                            "TargetResultMapping"     : { # Was the target prediction correct?
                             },
                             "SampleMask" : None
                         },
@@ -2877,8 +3160,11 @@ class PyCore:
                             "UseCaches" : False
                         }
                     },
-                    "TrackingName" : "",
-                    "TrackingID"   : "ML_" + str(self.build_unique_key())
+                    "UnitsAheadSet" : "",
+                    "UnitsAheadType": "",
+                    "PredictionType": "",
+                    "TrackingName"  : "",
+                    "TrackingID"    : "ML_" + str(self.build_unique_key())
                 }
 
         # XGB Regressor Implementation
@@ -2935,15 +3221,20 @@ class PyCore:
             record["MLAlgo"]["Steps"]["Plot"]           = {
                                 "ShowPlot"      : False,
                                 "PlotType"      : "seaborn",
-                                "PlotTitle"     : "Demo XGB",
+                                "PlotTitle"     : "Scipype Plot",
                                 "YAxisTitle"    : "Actual",
                                 "XAxisTitle"    : "Predictions",
+                                "XLabel"        : "Dates",
+                                "YLabel"        : "Values",
+                                "Width"         : 15.0,
+                                "Height"        : 15.0,
                                 "MaxFeatures"   : 7,
                                 "Debug"         : False
             } # end of plot
 
             record["TargetColumnName"]      = target_column_name
-            record["TargetNames"]           = target_names
+            record["TargetColumnValues"]    = target_column_values
+            record["IgnoreFeatures"]        = ignore_features
             record["TrainFeatureNames"]     = []
             record["FeaturesTrain"]         = None
             record["FeaturesTest"]          = None
@@ -2952,6 +3243,81 @@ class PyCore:
             record["Debug"]                 = debug
 
         # end of XGB Regressor Implementation
+        elif ml_algo_name == "xgb-classifier":
+            record["MLAlgo"]["Steps"]["Train"]  = {
+                                "LearningRate"          : 0.1,
+                                "NumEstimators"         : 1000,
+                                "Objective"             : "reg:linear",
+                                "MaxDepth"              : 3,
+                                "MaxDeltaStep"          : 0,
+                                "MinChildWeight"        : 1,
+                                "Gamma"                 : 0,
+                                "SubSample"             : 0.8,
+                                "ColSampleByTree"       : 0.8,
+                                "ColSampleByLevel"      : 1.0,
+                                "RegAlpha"              : 0,
+                                "RegLambda"             : 1,
+                                "BaseScore"             : 0.5,
+                                "NumThreads"            : -1, # infinite = -1
+                                "ScaledPositionWeight"  : 1,
+                                "Seed"                  : 27,
+                                "Debug"                 : True
+            } # end of train
+
+            record["MLAlgo"]["Steps"]["CrossValidation"]= {
+                                "Metrics"               : "auc",
+                                "NumBoostRounds"        : 20,
+                                "NumFolds"              : 10,
+                                "Stratified"            : False,
+                                "Seed"                  : 0,
+                                "EarlyStoppingRounds"   : "",
+                                "ShowProgress"          : True,
+                                "Debug"                 : False
+            } # end of cross validation
+
+            record["MLAlgo"]["Steps"]["Fit"]            = {
+                                "SampleWeight"          : "",
+                                "EvalSet"               : "",
+                                "EvalMetric"            : "",
+                                "EarlyStoppingRounds"   : "",
+                                "Debug"                 : False
+            } # end of fit
+
+            record["MLAlgo"]["Steps"]["Predict"]        = {
+                                "OutputMargin"          : False,
+                                "NumTreeLimit"          : 0
+            } # end of predict
+
+            record["MLAlgo"]["Steps"]["PredictProba"]   = {
+                                "OutputMargin"          : False,
+                                "NumTreeLimit"          : 0
+            } # end of proba
+
+            record["MLAlgo"]["Steps"]["Plot"]           = {
+                                "ShowPlot"      : False,
+                                "PlotType"      : "seaborn",
+                                "PlotTitle"     : "Scipype Plot",
+                                "YAxisTitle"    : "Actual",
+                                "XAxisTitle"    : "Predictions",
+                                "XLabel"        : "Dates",
+                                "YLabel"        : "Values",
+                                "Width"         : 15.0,
+                                "Height"        : 15.0,
+                                "MaxFeatures"   : 7,
+                                "Debug"         : False
+            } # end of plot
+
+            record["TargetColumnName"]      = target_column_name
+            record["TargetColumnValues"]    = target_column_values
+            record["IgnoreFeatures"]        = ignore_features
+            record["TrainFeatureNames"]     = []
+            record["FeaturesTrain"]         = None
+            record["FeaturesTest"]          = None
+            record["TargetTrain"]           = None
+            record["TargetTest"]            = None
+            record["Debug"]                 = debug
+
+        # end of XGB Classifier Implementation
 
         record["MLAlgo"]["Steps"]["Train"].update(train_api_node)
         record["MLAlgo"]["Steps"]["CrossValidation"].update(cross_val_api_node)
@@ -2964,6 +3330,9 @@ class PyCore:
         record["TrackingName"]              = str(req["TrackingName"])
         record["TrackingID"]                = str(req["TrackingID"])
         record["TrackingType"]              = str(req["TrackingType"])
+        record["UnitsAheadSet"]             = str(req["UnitsAheadSet"])
+        record["UnitsAheadType"]            = str(req["UnitsAheadType"])
+        record["PredictionType"]            = str(req["PredictionType"])
 
         if "Meta" in req["MLAlgo"]:
             record["MLAlgo"]["Meta"].update(req["MLAlgo"]["Meta"])
@@ -2972,7 +3341,7 @@ class PyCore:
     # end of ml_build_req_node
 
 
-    def ml_build_res_node(self):
+    def ml_build_res_node(self, ml_req):
 
         now                     = datetime.datetime.now()
         record  = {
@@ -2993,24 +3362,713 @@ class PyCore:
                     "Model"             : None,
                     "SampleMask"        : None,
                     "PredictionMask"    : None,
+                    "UnitsAheadSet"     : "",
+                    "UnitsAheadType"    : "",
+                    "PredictionType"    : "",
                     "MLAlgoName"        : "", 
+                    "Meta"              : {},
                     "Tracking"  : {
                         "Start" : now.strftime("%Y-%m-%d %H:%M:%S"),
                         "End"   : ""
                     }
                 }
 
+        # Attach custom dictionary by setting it to the Request's "ResponseMeta" value
+        if "ResponseMeta" in ml_req:
+            record["Meta"]      = ml_req["ResponseMeta"]
+
         return record
     # end of ml_build_res_node
     
     
+    def ml_compile_analysis_dataset(self, req, rds, dbs, debug=False):
+       
+
+        analysis_version        = int(req["Version"])
+        accuracy_results        = req["AccuracyResults"]
+        prediction_markers      = req["PredictionMarkers"]
+        ds_name                 = str(req["DSName"])
+        track_id                = str(req["Tracking"]["TrackingID"])
+        
+        # Add meta data as needed to the analysis dataset
+        meta_data               = {}
+        if "Analysis" in req:
+            if "Meta" in req:
+                meta_data       = req["Analysis"]["Meta"]
+
+        self.lg("Generating Analysis Dataset Version(" + str(analysis_version) + ") Name(" + str(ds_name) + ")", 6)
+
+        pk_show_plot        = False
+        test_show_plot      = str(os.getenv("ENV_SHOW_PLOT", "0"))
+        if str(test_show_plot) == "1":
+            pk_show_plot    = True
+        
+        import pandas as pd
+        
+        self.lg("Creating Predictions DF", 6)
+        predictions_df          = pd.DataFrame(prediction_markers)
+        predictions_df["Date"]  = pd.to_datetime(predictions_df["Date"], format='%Y-%m-%d %H:%M:%S')
+        self.lg("Done Creating Predictions DF", 6)
+
+        # Add custom analysis actions here
+
+        now                     = datetime.datetime.now()
+        just_today              = str(now.strftime("%Y-%m-%d"))
+        image_base_dir          = str(os.getenv("ENV_DATA_SRC_DIR", "/opt/work/data/dst"))
+        if os.path.exists(image_base_dir) == False:
+            image_base_dir      = "/opt/work/data/dst"
+
+        forecast_image_file     = "forecast_"  + ds_name + ".png"
+        scatter_image_file      = "scatter_"   + ds_name + ".png"
+        pairplot_image_file     = "pairplot_"  + ds_name + ".png"
+        jointplot_image_file    = "jointplot_" + ds_name + ".png"
+        confmatrix_image_file   = "confusionmatrix_" + ds_name + ".png"
+        featimp_image_file      = "featimp_" + ds_name + ".png"
+
+        path_to_image_forecast  = image_base_dir + "/" + str(forecast_image_file)
+        path_to_image_scatter   = image_base_dir + "/" + str(scatter_image_file)
+        path_to_image_pairplot  = image_base_dir + "/" + str(pairplot_image_file)
+        path_to_image_jointplot = image_base_dir + "/" + str(jointplot_image_file)
+        path_to_image_cmatrix   = image_base_dir + "/" + str(confmatrix_image_file)
+        path_to_image_featimp   = image_base_dir + "/" + str(featimp_image_file)
+
+        models                  = []
+        confusion_matrices      = []
+        model_id                = self.build_unique_key(6)
+
+        for node_idx,key_name in enumerate(accuracy_results):
+
+            res_node            = accuracy_results[key_name]
+            if "Model" in res_node:
+                model           = res_node["Model"]
+                model_name      = track_id + "_" + model_id + "_" + str(node_idx)
+                new_model       = {
+                                    "ID"            : model_name,
+                                    "Target"        : key_name,
+                                    "FeatureNames"  : res_node["FeatureNames"],
+                                    "Model"         : model
+                                }
+                models.append(new_model)
+        # end for all nodes
+
+        analysis_dataset                        = {}
+        analysis_dataset["DSName"]              = str(ds_name)
+        analysis_dataset["CreationDate"]        = str(now.strftime("%Y-%m-%d-%H-%M-%S"))
+        analysis_dataset["PredictionsDF"]       = predictions_df
+        analysis_dataset["AccuracyResults"]     = accuracy_results
+        analysis_dataset["Models"]              = models
+        analysis_dataset["Version"]             = analysis_version
+        analysis_dataset["ShowPlot"]            = pk_show_plot
+        analysis_dataset["ForecastImgFile"]     = path_to_image_forecast
+        analysis_dataset["ScatterImgFile"]      = path_to_image_scatter
+        analysis_dataset["PairPlotImgFile"]     = path_to_image_pairplot
+        analysis_dataset["JointPlotImgFile"]    = path_to_image_jointplot
+        analysis_dataset["CMatrixImgFile"]      = path_to_image_cmatrix
+        analysis_dataset["FeatImpImgFile"]      = path_to_image_featimp
+        analysis_dataset["Tracking"]            = req["Tracking"]
+        analysis_dataset["UnitsAheadSet"]       = req["MLAlgo"]["UnitsAheadSet"]
+        analysis_dataset["UnitsAheadType"]      = req["MLAlgo"]["UnitsAheadType"]
+        analysis_dataset["PredictionType"]      = req["MLAlgo"]["PredictionType"]
+        analysis_dataset["FeatureColumnNames"]  = req["FeatureColumnNames"]
+        analysis_dataset["TargetColumnName"]    = req["TargetColumnName"]
+        analysis_dataset["TargetColumnValues"]  = req["TargetColumnValues"]
+        analysis_dataset["IgnoreFeatures"]      = req["IgnoreFeatures"]
+        analysis_dataset["ConfMatrices"]        = req["ConfMatrices"]
+        analysis_dataset["Meta"]                = meta_data # your custom meta data goes in here for inclusion in the s3 objects
+
+        self.lg("Built Analysis Dataset for Request(" + str(track_id) + ") Models(" + str(len(analysis_dataset["Models"])) + ")", 6)
+
+        return analysis_dataset
+    # end of ml_compile_analysis_dataset
+
+    
+    def ml_load_csv_dataset(self, req, rds, dbs, debug=False):
+        
+        record          = {
+                            "SourceDF"              : None,
+                            "AllFeatures"           : [],
+                            "TrainAndTestFeatures"  : [],
+                            "TrainFeatures"         : []
+                        }
+        results         = self.build_def_hash("Display Error", "Not Run", record)
+
+        try:
+
+            load_csv_req        = {
+                                    "MLType"                : req["MLType"],
+                                    "TargetColumnName"      : req["TargetColumnName"],   # What column is getting processed
+                                    "IgnoreFeatures"        : req["IgnoreFeatures"],     # Prune non-int/float columns as needed: 
+                                    "CSVFile"               : req["MLAlgo"]["Meta"]["Source"]["CSVFile"]
+                                }
+
+            lg("Loading CSV(" + str(load_csv_req["CSVFile"]) + ")", 6)
+
+            csv_load_results    = self.sk_load_csv(load_csv_req, rds, dbs)
+
+            if csv_load_results["Status"] != "SUCCESS":
+                err_msg         = "Failed to Load CSV(" + str(load_csv_req["CSVFile"]) + ") with Error(" + str(load_csv_req["Error"]) + ")"
+                lg("ERROR: " + str(err_msg), 0)
+                print err_msg
+                return self.build_def_hash("Display Error", err_msg, record)
+
+            record              = csv_load_results["Record"]
+            
+            results             = self.build_def_hash("SUCCESS", "", record)
+
+        except Exception,k:
+            err_msg = "Failed Loading CSV Dataset(" + str(req["MLAlgo"]["Meta"]["Source"]["CSVFile"]) + ") with Ex(" + str(k) + ")"
+            return self.handle_display_error(err_msg, record, True)
+        # end of processing results
+
+        return results
+    # end of ml_load_csv_dataset
+
+
+    def ml_process_forecast(self, ml_request, rds, dbs, debug=False):
+
+        record                      = {
+                                    }
+        last_step                   = ""
+        results                     = self.build_def_hash("Display Error", "Not Run", record)
+
+        try:
+
+            last_step               = "Compiling"
+            units_ahead_set         = ml_request["UnitsAheadSet"]
+            units_ahead_type        = ml_request["UnitsAheadType"]
+            feature_column_names    = ml_request["FeatureColumnNames"]
+            prediction_type         = ml_request["PredictionType"]
+
+            today                   = datetime.datetime.now().date()
+            future_prediction_dates = self.ml_return_prediction_dates(today, units_ahead_set, units_ahead_type, rds, dbs, debug)
+
+            if debug:
+                lg("Future Dates: " + str(future_prediction_dates) + ")", 6)
+
+            compile_results         = self.ml_compile_forecast_results(units_ahead_set, feature_column_names, ml_request, rds, dbs, debug)
+            source_df               = None
+            confusion_matrices      = []
+            prediction_markers      = []
+            num_algos_done          = 0
+            max_algos               = len(feature_column_names) * len(units_ahead_set)
+            stop_processing         = False
+            accuracy_results        = {}
+            unit_done_idx           = 0
+            cur_units_ahead         = 5
+
+            if compile_results["Status"] != "SUCCESS":
+                lg("ERROR: Failed to build Algo Forecasts with Error(" + str(compile_results["Error"]) + ")", 0)
+                stop_processing     = True
+            else:
+                last_step           = "Adding Algo Results"
+                algo_nodes          = compile_results["Record"]["AlgoNodes"]
+
+
+                self.lg("Algos Done(" + str(num_algos_done) + "/" + str(max_algos) + ") Compiled Results(" + str(len(algo_nodes)) + ")", 6)
+                lg("Algos Done(" + str(num_algos_done) + "/" + str(max_algos) + ") Compiled Results(" + str(len(algo_nodes)) + ")", 6)
+                last_step           = "Walking through AlgoNodes(" + str(len(algo_nodes)) + ")"
+                for units_ahead in algo_nodes:
+
+                    invalid_node        = True
+                    forecast_node       = {
+                                        }
+
+                    last_step           = "UnitIdx(" + str(unit_done_idx) + ") Walking through Targets(" + str(len(feature_column_names)) + ")"
+                    unit_done_idx       += 1
+                    for cur_target_col_name in feature_column_names:
+
+                        if cur_target_col_name not in units_ahead:
+                            lg("ERROR: Missing TargetColumnName(" + str(cur_target_col_name) + ") from Forecast Results", 0)
+                            break
+                        if units_ahead[cur_target_col_name] == None:
+                            lg("ERROR: Invalid TrackingName(" + str(ml_request["TrackingName"]) + ") TargetColumnName(" + str(cur_target_col_name) + ") from Forecast Results", 0)
+                            break
+
+                        invalid_node    = False
+
+                        forecast_node[cur_target_col_name]    = {}
+
+                        node_req        = units_ahead[cur_target_col_name]["Request"]
+                        node_res        = units_ahead[cur_target_col_name]["Response"]
+
+                        if num_algos_done == 0:
+                            feature_names = node_res["FeatureNames"]
+                            source_df   = node_res["SourceDF"]
+
+                        ml_model        = node_res["Model"]
+                        predictions     = node_res["Predictions"]
+                        predictions_df  = node_res["PredictionsDF"]
+                        probapreds_df   = node_res["ProbaPredsDF"]
+                        rankings        = node_res["Rankings"]
+
+                        algo_name       = str(node_req["MLAlgo"]["Name"])
+                        cur_units_ahead = int(node_req["MLAlgo"]["Meta"]["UnitsAhead"])
+                        
+                        acc_key         = cur_target_col_name + "_" + str(cur_units_ahead)
+
+                        if "ConfusionMatrix" in node_res:
+                            if node_res["ConfusionMatrix"] is not None:
+                                confusion_matrices.append({
+                                            "ID"                : int(num_algos_done),
+                                            "TargetColumnName"  : cur_target_col_name,
+                                            "UnitsAhead"        : cur_units_ahead,
+                                            "AccuracyKey"       : acc_key,
+                                            "CM"                : node_res["ConfusionMatrix"]
+                                        })
+
+                        accuracy_results[acc_key]   = node_res
+
+                        if debug: 
+                            print ""
+                            print "Algo(" + str(num_algos_done + 1) + "/" + str(max_algos) + ") Name(" + str(algo_name) + ") UnitsAhead(" + str(cur_units_ahead) + "-" + str(cur_target_col_name) + ")"
+                            print ""
+                            num_algos_done      += 1
+
+                        last_step               = "Building New Prediction with Model"
+                        prediction_node         = self.ml_build_newest_prediction_with_model(node_res)
+
+                        if prediction_node["PredictionValue"] != None:
+                            source_date         = prediction_node["Date"]
+                            prediction_date     = prediction_node["PredictionDate"]
+                            prediction_value    = prediction_node["PredictionValue"]
+
+                            forecast_node["PredictionDate"]     = prediction_date
+                            forecast_node[cur_target_col_name]  = prediction_value
+
+                            if debug:
+                                print "Processed Date(" + str(source_date) + ") Predicting(" + str(prediction_date) + ") => " + str(prediction_value)
+                    # end of each target column
+
+                    last_step           = "Checking for valid Node"
+
+                    #######################################################################
+                    #
+                    # V3 Feature:
+                    #
+                    # Eventually this should be using an object passed in that creates the 
+                    # nodes in a class method and returns them here.
+                    # For now the core is coupled to how prediction nodes are built
+                    if not invalid_node:
+
+                        last_step               = "Building Prediction Node"
+                        supported_forecast      = True
+
+                        if ml_request["ForecastType"] == "ReplacedDictKeys":
+
+                            prediction_node     = {}
+                            for req_key in ml_request["ForecastDict"]:
+                                req_value       = ml_request["ForecastDict"][req_key]
+                                if req_key in new_data_node:
+                                    prediction_node[req_value]  = new_data_node[req_key]
+
+                                else:
+                                    # handle common ones like date columns that do not get renamed
+                                    if "Date" == req_key:
+                                        prediction_node["Date"] = future_prediction_dates[str(cur_units_ahead)]
+                            # end of processing dict
+                        # end of ReplacedDictKeys
+                        elif ml_request["ForecastType"] == "CustomDefined":
+                            lg("Add support for your own custom Forecast here", 5)
+                        # end of CustomDefined
+                        else:
+                            lg("ERROR: Unsupported ForecastType(" + str(ml_request["ForecastType"]) + ") - Please use a supported ForecastType", 0)
+                            supported_forecast      = False
+                        # end of handling forecasts
+
+                        if supported_forecast:
+                            prediction_markers.append(prediction_node)
+                    # end of invalid_node detection
+                # end for units_ahead in algo_nodes
+            # if results to process
+
+            record["StoppedEarly"]          = stop_processing
+            record["AccuracyResults"]       = accuracy_results
+            record["ConfMatrices"]          = confusion_matrices
+            record["PredictionMarkers"]     = prediction_markers
+            record["AnalysisVersion"]       = 1
+            record["SourceDF"]              = source_df
+            record["MLAlgo"]                = ml_request
+
+            tracking_data                   = self.ml_build_tracking_id(ml_request, rds, dbs, debug)
+            if "Tracking" in ml_request:
+                tracking_data.update(ml_request["Tracking"])
+
+            record["Tracking"]              = tracking_data
+
+            results                         = self.build_def_hash("SUCCESS", "", record)
+
+        except Exception,k:
+
+            err_msg = "Failed Processing ML Forecast(" + str(ml_request["MLAlgo"]["Name"]) + ") LastStep(" + str(last_step) + ") Version(" + str(ml_request["Version"]) + ") with Ex(" + str(k) + ")"
+
+            if "TrackingName" in ml_request:
+                err_msg = "Failed Processing ML Forecast(" + str(ml_request["MLAlgo"]["Name"]) + ") Tracking(" + str(ml_request["TrackingName"]) + ") LastStep(" + str(last_step) + ") Version(" + str(ml_request["Version"]) + ") with Ex(" + str(k) + ")"
+
+            return self.handle_display_error(err_msg, record, True)
+        # end of processing results
+
+        return results
+    # end of ml_process_forecast
+
+
+    def ml_compile_forecast_results(self, units_ahead_set, target_columns, ml_base_request, rds, dbs, debug=False):
+
+        record                      = {
+                                        "AlgoNodes" : []
+                                    }
+        results                     = self.build_def_hash("Display Error", "Not Run", record)
+
+        try:
+
+            units_ahead_type        = ml_base_request["UnitsAheadType"]
+
+            self.lg("Compiling Forecast for " + str(units_ahead_type) + "(" + str(len(units_ahead_set)) + ")", 6)
+
+            cur_done                = 0
+            total_done              = len(units_ahead_set) * len(target_columns)
+
+            for units_ahead in units_ahead_set:
+
+                units_node          = {
+                                        "PredictedDate" : None
+                                    }
+                for col_name in target_columns:
+                    units_node[col_name]   = None
+
+                for col_name in target_columns:
+
+                    if debug:
+                        self.lg("", 6)
+                    
+                    self.lg("Processing(" + str(cur_done) + "/" + str(total_done) + ") Algo(" + str(units_ahead) + "-" + str(col_name) + ")", 6)
+                    lg("Processing(" + str(cur_done) + "/" + str(total_done) + ") Algo(" + str(units_ahead) + "-" + str(col_name) + ")", 6)
+                
+                    ml_req                                  = self.ml_build_req_node(ml_base_request)
+                    ml_req["TargetColumnName"]              = col_name
+                    ml_req["MLAlgo"]["Cache"]["ModelID"]    = str(cur_done)
+                    
+                    cur_done                                += 1
+                    
+                    # Customize as needed:
+                    ml_req["MLAlgo"]["Meta"]["UnitsAhead"]  = int(units_ahead)
+
+                    # For this run:
+                    algo_node               = {
+                                                "Request"   : ml_req,
+                                                "Response"  : {}
+                                            }
+
+                    if bool(ml_req["MLAlgo"]["Cache"]["UseCaches"]):
+                        if ml_req["TrackingType"] == "UseTargetColAndUnits":
+                            ml_req["ModelCache"]    = {
+                                                        "RLoc"  : "CACHE:_MD_" + str(ml_req["TrackingName"]) + "_" + str(ml_req["TargetColumnName"])
+                                                    }
+                    # end of appending cache support
+
+                    algo_results            = self.ml_run_algo(ml_req, rds, dbs)
+
+                    lg("Done Processing(" + str(cur_done) + "/" + str(total_done) + ") Algo(" + str(units_ahead) + "-" + str(col_name) + ")", 6)
+
+                    if algo_results["Status"] == "SUCCESS":
+                        if algo_results["Record"]["Model"] != None:
+                            algo_node["Response"]   = algo_results["Record"]
+                            units_node[col_name]    = algo_node
+                        else:
+                            err_msg = "Compile Forecast - Failed to find a valid Model for ML(" + str(ml_req["MLType"]) + ") Algo(" + str(ml_req["MLAlgo"]["Name"]) + ")"
+                            lg("ERROR: " + str(err_msg), 0)
+                    else:
+                        err_msg     = "Compile Forecast - Failed to run ML(" + str(ml_req["MLType"]) + ") Algo(" + str(ml_req["MLAlgo"]["Name"]) + ") with Error(" + str(algo_results["Error"]) + ")"
+                        lg("ERROR: " + str(err_msg), 0)
+                # end of building the current target col
+                
+                record["AlgoNodes"].append(units_node)
+            # end of processing each algo
+
+            results         = self.build_def_hash("SUCCESS", "", record)
+
+        except Exception,k:
+            err_msg         = "Unable to Compile Forecast Results for Algos with Ex(" + str(k) + ")"
+            return self.handle_display_error(err_msg, record, True)
+        # end of try/ex
+
+        return results
+    # end of ml_compile_forecast_results
+
+
+    def ml_train_models_for_predictions(self, ml_request, rds, dbs, debug=False):
+
+        record                      = {
+                                        "StoppedEarly"      : "Not Run",
+                                        "AnalysisVersion"   : 1,
+                                        "AccuracyResults"   : {},
+                                        "MLAlgo"            : ml_request,
+                                        "SourceDF"          : None,
+                                        "AlgoNodes"         : [],
+                                        "Tracking"          : {}
+                                    }
+        last_step                   = ""
+        results                     = self.build_def_hash("Display Error", "Not Run", record)
+
+        try:
+
+            last_step               = "Compiling"
+            units_ahead_set         = ml_request["UnitsAheadSet"]
+            units_ahead_type        = ml_request["UnitsAheadType"]
+            feature_column_names    = ml_request["FeatureColumnNames"]
+            prediction_type         = ml_request["PredictionType"]
+
+            today                   = datetime.datetime.now().date()
+
+            compile_results         = self.ml_build_models_for_predictions(feature_column_names, ml_request, rds, dbs, debug)
+            source_df               = None
+            num_algos_done          = 0
+            max_algos               = len(feature_column_names) * len(units_ahead_set)
+            stop_processing         = False
+            accuracy_results        = {}
+            cur_units_ahead         = 0
+            algo_nodes              = [] 
+
+            if compile_results["Status"] != "SUCCESS":
+                lg("ERROR: TM - Failed to build Algo Forecasts with Error(" + str(compile_results["Error"]) + ")", 0)
+                stop_processing     = True
+            else:
+                last_step           = "Adding Algo Results"
+                initial_nodes       = compile_results["Record"]["AlgoNodes"]
+
+                self.lg("TM - Algos Done(" + str(num_algos_done) + "/" + str(max_algos) + ") Compiled Results(" + str(len(initial_nodes)) + ")", 6)
+                lg("TM - Algos Done(" + str(num_algos_done) + "/" + str(max_algos) + ") Compiled Results(" + str(len(initial_nodes)) + ")", 6)
+                last_step           = "Walking through AlgoNodes(" + str(len(initial_nodes)) + ")"
+                for cur_node in initial_nodes:
+
+                    invalid_node        = True
+
+                    last_step           = "Algo(" + str(num_algos_done) + ") Walking through Node(" + str(cur_node["TargetColumn"]) + ")"
+
+                    for cur_target_col_name in feature_column_names:
+
+                        if cur_node["TargetColumn"] == cur_target_col_name:
+
+                            new_node        = cur_node["Algo"]
+                            node_req        = new_node["Request"]
+                            node_res        = new_node["Response"]
+
+                            if num_algos_done == 0:
+                                feature_names = node_res["FeatureNames"]
+                                source_df   = node_res["SourceDF"]
+
+                            ml_model        = node_res["Model"]
+                            predictions     = node_res["Predictions"]
+                            predictions_df  = node_res["PredictionsDF"]
+                            probapreds_df   = node_res["ProbaPredsDF"]
+                            rankings        = node_res["Rankings"]
+                            algo_name       = str(node_req["MLAlgo"]["Name"])
+                            cur_units_ahead = int(node_req["MLAlgo"]["Meta"]["UnitsAhead"])
+
+                            acc_key         = cur_target_col_name
+
+                            accuracy_results[acc_key]               = node_res
+                            accuracy_results[acc_key]["SourceDF"]   = None
+
+                            new_node["Response"]["SourceDF"]        = None
+                            algo_nodes.append(new_node)
+
+                            if debug: 
+                                print ""
+                                print "TM - Algo(" + str(num_algos_done + 1) + "/" + str(max_algos) + ") Name(" + str(algo_name) + ") UnitsAhead(" + str(cur_units_ahead) + "-" + str(cur_target_col_name) + ")"
+                                print ""
+
+                            num_algos_done      += 1
+                    # end of each target column
+                # end for units_ahead in initial_nodes
+            # if results to process
+
+            record["StoppedEarly"]          = stop_processing
+            record["AccuracyResults"]       = accuracy_results
+            record["AnalysisVersion"]       = 1
+            record["SourceDF"]              = source_df
+
+            record["AlgoNodes"]             = algo_nodes
+            record["MLAlgo"]                = ml_request
+
+            tracking_data                   = self.ml_build_tracking_id(ml_request, rds, dbs, debug)
+            if "Tracking" in ml_request:
+                tracking_data.update(ml_request["Tracking"])
+
+            record["Tracking"]              = tracking_data
+
+            results                         = self.build_def_hash("SUCCESS", "", record)
+
+        except Exception,k:
+
+            err_msg = "Failed Processing ML Forecast(" + str(ml_request["MLAlgo"]["Name"]) + ") LastStep(" + str(last_step) + ") Version(" + str(ml_request["Version"]) + ") with Ex(" + str(k) + ")"
+
+            if "TrackingName" in ml_request:
+                err_msg = "Failed Processing ML Forecast(" + str(ml_request["MLAlgo"]["Name"]) + ") Tracking(" + str(ml_request["TrackingName"]) + ") LastStep(" + str(last_step) + ") Version(" + str(ml_request["Version"]) + ") with Ex(" + str(k) + ")"
+
+            return self.handle_display_error(err_msg, record, True)
+        # end of processing results
+
+        return results
+    # end of ml_train_models_for_predictions
+
+
+    def ml_build_models_for_predictions(self, target_columns, ml_base_request, rds, dbs, debug=False):
+
+        record                      = {
+                                        "AlgoNodes" : []
+                                    }
+        results                     = self.build_def_hash("Display Error", "Not Run", record)
+
+        try:
+
+            self.lg("BuildModels for TargetColumns(" + str(len(target_columns)) + ")", 6)
+
+            cur_done                = 0
+            total_done              = len(target_columns)
+            creation_date_str       = datetime.datetime.now().strftime("%Y-%M-%D %H:%M:%S")
+
+            for col_name in target_columns:
+
+                new_node            = {
+                                        "TargetColumn"  : col_name,
+                                        "Algo"          : None,
+                                        "Creation"      : creation_date_str
+                                    }
+           
+                if debug:
+                    self.lg("", 6)
+                
+                self.lg("Build Processing(" + str(cur_done) + "/" + str(total_done) + ") Algo(" + str(col_name) + ")", 6)
+                lg("Build Processing(" + str(cur_done) + "/" + str(total_done) + ") Algo(" + str(col_name) + ")", 6)
+            
+                ml_req                                  = self.ml_build_req_node(ml_base_request)
+                ml_req["TargetColumnName"]              = col_name
+                ml_req["MLAlgo"]["Cache"]["ModelID"]    = str(cur_done)
+                
+                cur_done                                += 1
+                
+                # Customize as needed:
+                ml_req["MLAlgo"]["Meta"]["UnitsAhead"]  = 0
+
+                # For this run:
+                algo_node               = {
+                                            "Request"   : ml_req,
+                                            "Response"  : {}
+                                        }
+
+                if bool(ml_req["MLAlgo"]["Cache"]["UseCaches"]):
+                    if ml_req["TrackingType"] == "UseTargetColAndUnits":
+                        ml_req["ModelCache"]    = {
+                                                    "RLoc"  : "CACHE:_MD_" + str(ml_req["TrackingName"]) + "_" + str(ml_req["TargetColumnName"])
+                                                }
+                # end of appending cache support
+
+                algo_results            = self.ml_run_algo(ml_req, rds, dbs)
+
+                lg("Build - Done Processing(" + str(cur_done) + "/" + str(total_done) + ") Algo(" + str(col_name) + ")", 6)
+
+                if algo_results["Status"] == "SUCCESS":
+                    if algo_results["Record"]["Model"] != None:
+                        algo_node["Response"]   = algo_results["Record"]
+                        new_node["Algo"]        = algo_node
+                    else:
+                        err_msg = "BuildModels - Failed to find a valid Model for ML(" + str(ml_req["MLType"]) + ") Algo(" + str(ml_req["MLAlgo"]["Name"]) + ")"
+                        lg("ERROR: " + str(err_msg), 0)
+                else:
+                    err_msg     = "Build - Failed to run ML(" + str(ml_req["MLType"]) + ") Algo(" + str(ml_req["MLAlgo"]["Name"]) + ") with Error(" + str(algo_results["Error"]) + ")"
+                    lg("ERROR: " + str(err_msg), 0)
+                
+                record["AlgoNodes"].append(new_node)
+            # end of building the current target col
+
+            results         = self.build_def_hash("SUCCESS", "", record)
+
+        except Exception,k:
+            err_msg         = "Unable to Build Models for Predictions with Ex(" + str(k) + ")"
+            return self.handle_display_error(err_msg, record, True)
+        # end of try/ex
+
+        return results
+    # end of ml_build_models_for_predictions
+
+
+    def ml_compile_predictions_from_models(self, req, rds, dbs, debug=False):
+
+        record                  = {
+                                    "ConfMatrices"      : [],
+                                    "PredictionMarkers" : []
+                                }
+        results                 = self.build_def_hash("Display Error", "Not Run", record)
+
+        try:
+
+            confusion_matrices  = []
+            prediction_markers  = []
+            algo_nodes          = req["AlgoNodes"]
+            prediction_row      = req["PredictionRow"]
+            total_algos         = len(algo_nodes) 
+
+            lg("Compiling Predictions for AlgoNodes(" + str(total_algos)  + ")", 6)
+
+            for aidx,algo in enumerate(algo_nodes):
+
+                node_res        = algo["Response"]
+
+                lg("Algo(" + str(aidx+1) + "/" + str(total_algos) + ") Predicting TargetColumnName(" + str(node_res["TargetColumnName"]) + ")", 6)
+                target_col_name = node_res["TargetColumnName"]
+                model           = node_res["Model"]
+
+                predict_req     = node_res
+                acc_key         = target_col_name
+                        
+                if "ConfusionMatrix" in node_res:
+                    if node_res["ConfusionMatrix"] is not None:
+                        confusion_matrices.append({
+                                    "ID"                : int(aidx),
+                                    "TargetColumnName"  : target_col_name,
+                                    "UnitsAhead"        : -1,
+                                    "AccuracyKey"       : acc_key,
+                                    "CM"                : node_res["ConfusionMatrix"]
+                                })
+
+                predict_req["PredictRow"]       = req["PredictionRow"]
+                predict_req["PredictionMask"]   = req["PredictionMask"]
+                
+                predict_res     = self.ml_determine_model_prediction(predict_req)
+
+                if predict_res["PredictionValue"] != None:
+
+                    marker_node = {
+                                    "TargetColumnName"  : predict_res["TargetColumnName"],
+                                    "PredictionValue"   : predict_res["PredictionValue"],
+                                    "PredictionAPI"     : predict_res["PredictionAPI"],
+                                    "ProbaPredAPI"      : predict_res["ProbaPredAPI"],
+                                    "Date"              : predict_res["Date"]
+                                }
+                    prediction_markers.append(marker_node)
+            # end of processing all algos for a prediction
+
+            record["PredictionMarkers"] = prediction_markers
+            record["ConfMatrices"]      = confusion_matrices
+
+            results             = self.build_def_hash("SUCCESS", "", record)
+
+        except Exception,k:
+            err_msg             = "Unable to Build Prediction Results for Algos with Ex(" + str(k) + ")"
+            return self.handle_display_error(err_msg, record, True)
+        # end of try/ex
+
+        return results
+    # end of ml_compile_predictions_from_models
+
+
     def ml_run_algo(self, req, rds, dbs, debug=False):
         
         ml_type         = "Unknown ML Type"
         ml_algo_name    = "Unknown ML Algo Name"
         err_msg         = ""
 
-        record          = self.ml_build_res_node()
+        record          = self.ml_build_res_node(req)
 
         results         = self.build_def_hash("Display Error", "Not Run", record)
 
@@ -3038,14 +4096,17 @@ class PyCore:
             ml_request              = req
             ml_type                 = str(ml_request["MLType"])
             ml_algo_name            = str(ml_request["MLAlgo"]["Name"])
+            ml_ds_name              = str(ml_request["MLAlgo"]["Meta"]["DSName"])
+            ml_prediction_type      = str(ml_request["PredictionType"])
+
+            dataset_name            = str(ml_ds_name).strip().lstrip()
 
             load_csv_request_args   = {
                                         "MLType"                : ml_request["MLType"],
-                                        "TargetColumnName"      : ml_request["TargetColumnName"],   # What column is getting processed
-                                        "IgnoreFeatures"        : ml_request["MLAlgo"]["Meta"]["IgnoreFeatures"], # Prune non-int/float columns as needed: 
+                                        "TargetColumnName"      : ml_request["TargetColumnName"], # What column is getting processed
+                                        "IgnoreFeatures"        : ml_request["IgnoreFeatures"],   # Prune non-int/float columns as needed: 
                                         "CSVFile"               : ml_request["MLAlgo"]["Meta"]["Source"]["CSVFile"]
                                     }
-
             lg("Loading CSV(" + str(load_csv_request_args["CSVFile"]) + ")", 6)
 
             csv_load_results        = self.sk_load_csv(load_csv_request_args, rds, dbs)
@@ -3064,26 +4125,46 @@ class PyCore:
             prediction_filter_mask  = (source_df.index > 0)
 
             ml_request["TrainFeatures"] = train_feature_names
-            source_df["Date"]       = pd.to_datetime(source_df["Date"],  format="%Y-%m-%d %H:%M:%S")
-            source_df["FDate"]      = pd.to_datetime(source_df["FDate"], format="%Y-%m-%d %H:%M:%S")
 
-            run_error_checking      = True
+            if ml_prediction_type == "Forecast":
+                source_df["Date"]       = pd.to_datetime(source_df["Date"],  format="%Y-%m-%d %H:%M:%S")
+                source_df["FDate"]      = pd.to_datetime(source_df["FDate"], format="%Y-%m-%d %H:%M:%S")
 
-            if ml_type == "Custom Filter From Meta":
+            run_error_checking          = True
 
-                prediction_filter_mask  =     (source_df["Decision"] == 1) \
-                                            & ((source_df["DcsnResult"] == 0) | (source_df["DcsnResult"] == 1))
+            #######################################################################
+            #
+            # Support passing in the filter mask from the request to decouple this
+            # from the core
+            # 
+            found_mask_in_api           = False
+            if "SamplesFilterMask" in ml_request["MLAlgo"]["Meta"]:
 
-            else:
-                err_msg             = "Unsupported Machine Learning Type for building a Samples Filter(" + str(ml_type) + ")"
-                lg("ERROR: " + str(err_msg), 0)
-                print err_msg
-                record["Tracking"]["End"]   = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                return self.build_def_hash("Display Error", err_msg, record)
+                if ml_request["MLAlgo"]["Meta"]["SamplesFilterMask"] is not None:
+                    prediction_filter_mask  = ml_request["MLAlgo"]["Meta"]["SamplesFilterMask"]
+                    found_mask_in_api       = True
+            # end of applying mask from api request
+
+            # Support v2 api:
+            if not found_mask_in_api:
+                if ml_type == "Custom Filter From Meta":
+                    prediction_filter_mask  =     (source_df["Decision"] == 1) \
+                                                & ((source_df["DcsnResult"] == 0) | (source_df["DcsnResult"] == 1))
+                else:
+                    err_msg             = "Unsupported Machine Learning Type for building a Samples Filter(" + str(ml_type) + ")"
+                    lg("ERROR: " + str(err_msg), 0)
+                    print err_msg
+                    record["Tracking"]["End"]   = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    return self.build_def_hash("Display Error", err_msg, record)
+            # end of handling filter mask from the API for predictions
 
             if run_error_checking:
+
+                lg ("Counting Samples from Mask", 6)
                 num_samples             = len(source_df[sample_filter_mask].index)
+                lg ("Counting Predictions from Mask", 6)
                 num_predictions         = len(source_df[prediction_filter_mask].index)
+                lg ("Done Counting Samples(" + str(num_samples) + ") Predictions(" + str(num_predictions) + ")", 6)
 
                 if num_samples == 0 or num_predictions == 0:
                     err_msg             = "Failed to Find Samples and Predictions for DSName(" + str(dataset_name) + ") Algo(" + str(ml_algo_name) + ") AlgoType(" + str(ml_type) + ") NumSamples(" + str(num_samples) + ") NumPredictions(" + str(num_predictions) + ") - Please check the sample_filter_mask with UnitsAhead(" + str(units_ahead) + ")"
@@ -3099,12 +4180,12 @@ class PyCore:
                     self.lg("Valid Masks for DSName(" + str(dataset_name) + ") Algo(" + str(ml_algo_name) + ") AlgoType(" + str(ml_type) + ") NumSamples(" + str(num_samples) + ") NumPredictions(" + str(num_predictions) + ")", 6)
                 # end of good/bad samples + prediction masks
             # end of error checking for invalid sample and prediction masks
-
+            
             synthesis_request_args  = {
                                         "MLType"                : ml_type,
-                                        "TargetColumnName"      : ml_request["TargetColumnName"],               # What column is getting processed
-                                        "TrainFeatures"         : ml_request["TrainFeatures"],                  # list of feature names to train the model
-                                        "TargetNames"           : ml_request["MLAlgo"]["Meta"]["TargetNames"],  # possible values each int in the target_column_name maps to
+                                        "TargetColumnName"      : ml_request["TargetColumnName"],    # What column is getting processed
+                                        "TargetColumnValues"    : ml_request["TargetColumnValues"],  # possible values each int in the target_column_name maps to
+                                        "TrainFeatures"         : ml_request["TrainFeatures"],       # list of feature names to train the model
                                         "SourceDF"              : source_df,
                                         "SampleMask"            : sample_filter_mask,
                                         "SampleFileterJSON"     : {                     # Allow for error handling with json-rules
@@ -3163,6 +4244,10 @@ class PyCore:
                         record["Predictions"]       = ml_result["Record"]["Predictions"]
                         record["ProbaPreds"]        = ml_result["Record"]["ProbaPreds"]
                         record["Model"]             = ml_result["Record"]["Model"]
+
+                        record["UnitsAheadSet"]     = req["UnitsAheadSet"]
+                        record["UnitsAheadType"]    = req["UnitsAheadType"]
+                        record["PredictionType"]    = req["PredictionType"]
 
                     else:
                         err_msg         = "Failed to build ML Object for Type(" + str(ml_type) + ") Algo(" + str(ml_algo_name) + ") with Error(" + str(ml_result["Error"]) + ")"
@@ -3332,23 +4417,23 @@ class PyCore:
     # end of ml_regression_build_prediction_results_df
 
 
-    def ml_regression_build_prediction_test_window(self, req, num_sticks, rds, dbs):
+    def ml_regression_build_prediction_test_window(self, req, num_units, rds, dbs):
 
         import pandas as pd
 
         ml_type                 = req["MLType"]
-        target_column_name      = req["TargetColumnName"]      # What column is getting processed
-        target_names            = req["TargetNames"]           # possible values each int in the target_column_name maps to
-        train_feature_names     = req["TrainFeatures"]         # pass in the features to train
+        target_column_name      = req["TargetColumnName"]   # What column is getting processed?
+        target_column_values    = req["TargetColumnValues"] # Possible values each int in the target_column_name maps to
+        train_feature_names     = req["TrainFeatures"]      # Pass in the features to train
         source_df               = req["SourceDF"]
         sample_filter_mask      = (source_df["DSName"] != "")
 
-        new_df                  = source_df.iloc[-1 * int(num_sticks):]
+        new_df                  = source_df.iloc[-1 * int(num_units):]
 
         if "Date" in str(source_df.columns):
-            new_df["Date"]      = pd.to_datetime(new_df["Date"], format='%Y-%m-%d')
+            new_df["Date"]      = pd.to_datetime(new_df["Date"], format='%Y-%m-%d')  # assuming the Date column is present
         if "FDate" in str(source_df.columns):
-            new_df["FDate"]     = pd.to_datetime(new_df["FDate"], format='%Y-%m-%d')
+            new_df["FDate"]     = pd.to_datetime(new_df["FDate"], format='%Y-%m-%d') # assuming the Future Date column is present
 
         last_row    = new_df.iloc[-1]
             
@@ -3358,7 +4443,7 @@ class PyCore:
 
     def ml_classifier_run_random_forest(self, req, rds, dbs, debug=False):
 
-        record          = self.ml_build_res_node()
+        record          = self.ml_build_res_node(req)
 
         results         = self.build_def_hash("Display Error", "Not Run", record)
 
@@ -3374,7 +4459,7 @@ class PyCore:
             algo_meta_data          = req["MLAlgo"]["Steps"]
             target_column_name      = req["TargetColumnName"]
             feature_names           = req["TrainFeatureNames"]
-            target_names            = req["TargetNames"]
+            target_column_values    = req["TargetColumnValues"]
             debug                   = False
             train_api_node          = {}
             cross_val_api_node      = {}
@@ -3451,6 +4536,7 @@ class PyCore:
             import matplotlib.pyplot as plt
             from sklearn.ensemble import RandomForestClassifier
             from pandas_ml import ConfusionMatrix # https://github.com/pandas-ml/pandas-ml/
+
             lg("Building RandomForest Classifier", 1)
             model                   = RandomForestClassifier(n_jobs=num_jobs)
 
@@ -3464,12 +4550,12 @@ class PyCore:
             predictions         = model.predict(req["FeaturesTest"])
 
             preds               = []
-            num_target_names    = len(target_names)
+            num_target_values   = len(target_column_values)
             for cur_idx,cur_row in enumerate(predictions):
                 if debug:
                     print "Row(" + str(cur_idx) + ") V(" + str(cur_row) + ")"
-                if int(cur_row) < num_target_names:
-                    preds.append(target_names[cur_row])
+                if int(cur_row) < num_target_values:
+                    preds.append(target_column_values[cur_row])
                 #for tar_idx,tar_value
             # end for all predictions        
 
@@ -3484,7 +4570,7 @@ class PyCore:
                 lg(" - Pandas Percentage for inpsecting the Confusion Matrix:", 6)
                 print pd.crosstab(index=record["TargetTest"], columns=preds, rownames=[ x_axis_title ], colnames= [ y_axis_title ] ).apply(lambda r: r/r.sum(), axis=1)
 
-            cm      = ConfusionMatrix(req["TargetTest"].tolist(), preds, labels=target_names)
+            cm      = ConfusionMatrix(req["TargetTest"].tolist(), preds, labels=target_column_values)
 
             if debug:
                 cm.print_stats()
@@ -3521,7 +4607,7 @@ class PyCore:
 
     def ml_classifier_run_extra_trees(self, req, rds, dbs, debug=False):
 
-        record          = self.ml_build_res_node()
+        record          = self.ml_build_res_node(req)
 
         results         = self.build_def_hash("Display Error", "Not Run", record)
 
@@ -3534,13 +4620,12 @@ class PyCore:
             ##############################################################
             target_column_name      = req["TargetColumnName"]
             feature_names           = req["TrainFeatureNames"]
-            target_names            = req["TargetNames"]
+            target_column_values    = req["TargetColumnValues"]
 
             # Assign meta data
             algo_meta_data          = req["MLAlgo"]["Steps"]
             target_column_name      = req["TargetColumnName"]
             feature_names           = req["TrainFeatureNames"]
-            target_names            = req["TargetNames"]
             debug                   = False
             train_api_node          = {}
             cross_val_api_node      = {}
@@ -3617,6 +4702,7 @@ class PyCore:
             import numpy as np
             import matplotlib.pyplot as plt
             from sklearn.ensemble import ExtraTreesClassifier
+            from pandas_ml import ConfusionMatrix # https://github.com/pandas-ml/pandas-ml/
 
             # Build a forest and compute the feature importances
             model = ExtraTreesClassifier(n_estimators=num_estimators,
@@ -3669,7 +4755,13 @@ class PyCore:
             record["TargetColumnName"] = str(req["TargetColumnName"])
             record["MLAlgoName"]    = str(req["MLAlgo"]["Name"])
             record["Model"]         = model
+            
+            lg("Building ConfusionMatrix", 6)
 
+            cm                      = ConfusionMatrix(req["TargetTest"].tolist(), predictions, labels=target_column_values)
+
+            record["ConfusionMatrix"]   = cm
+        
             results         = self.build_def_hash("SUCCESS", "", record)
         
         except Exception as k:
@@ -3687,7 +4779,7 @@ class PyCore:
 
         status                      = "Display Error"
         err_msg                     = ""
-        record                      = self.ml_build_res_node()
+        record                      = self.ml_build_res_node(req)
         results                     = self.build_def_hash(status, err_msg, record)
 
         try:
@@ -3703,7 +4795,7 @@ class PyCore:
 
             target_column_name      = req["TargetColumnName"]
             feature_names           = req["TrainFeatureNames"]
-            target_names            = req["TargetNames"]
+            target_column_values    = req["TargetColumnValues"]
 
             num_estimators          = 10
             learning_rate           = 0.1
@@ -3718,13 +4810,11 @@ class PyCore:
             ##############################################################
             target_column_name      = req["TargetColumnName"]
             feature_names           = req["TrainFeatureNames"]
-            target_names            = req["TargetNames"]
 
             # Assign meta data
             algo_meta_data          = req["MLAlgo"]["Steps"]
             target_column_name      = req["TargetColumnName"]
             feature_names           = req["TrainFeatureNames"]
-            target_names            = req["TargetNames"]
             debug                   = False
             train_api_node          = {}
             cross_val_api_node      = {}
@@ -3804,6 +4894,7 @@ class PyCore:
             from sklearn.metrics import roc_auc_score
             from mla.ensemble.gbm import GradientBoostingClassifier, GradientBoostingRegressor
             from mla.metrics.metrics import mean_squared_error
+            from pandas_ml import ConfusionMatrix # https://github.com/pandas-ml/pandas-ml/
             
             model                   = GradientBoostingClassifier(n_estimators=num_estimators, 
                                                 max_depth=max_depth,
@@ -3839,6 +4930,12 @@ class PyCore:
             record["Predictions"]   = predictions
             record["Model"]         = model
             record["Rankings"]      = rankings
+            
+            lg("Building ConfusionMatrix", 6)
+
+            cm                      = ConfusionMatrix(req["TargetTest"].tolist(), predictions, labels=target_column_values)
+
+            record["ConfusionMatrix"]   = cm
 
             results                 = self.build_def_hash(status, err_msg, record)
 
@@ -3870,9 +4967,8 @@ class PyCore:
 
             status                  = "SUCCESS"
             err_msg                 = ""
+            use_model_cache         = req["MLAlgo"]["Cache"]["UseCaches"]
 
-
-            import pandas as pd
             import seaborn as sns
             import pandas as pd
             import numpy as np
@@ -3882,10 +4978,11 @@ class PyCore:
             from xgboost.sklearn import XGBClassifier
             from sklearn import cross_validation, metrics   # Additional scklearn functions
             from sklearn.grid_search import GridSearchCV    # Perforing grid search
+            from pandas_ml import ConfusionMatrix # https://github.com/pandas-ml/pandas-ml/
             
             target_column_name      = req["TargetColumnName"]
             feature_names           = req["TrainFeatureNames"]
-            target_names            = req["TargetNames"]
+            target_column_values    = req["TargetColumnValues"]
 
             # Assign meta data
             algo_meta_data          = req["MLAlgo"]["Steps"]
@@ -3989,15 +5086,40 @@ class PyCore:
                 proba_ntree_limit    = int(predictproba_api_node["NumTreeLimit"]) 
 
             #Choose all predictors except target & IDcols
+
             lg("Building predictors", 6)
             predictors              = [x for x in req["FeaturesTrain"].columns if x not in [target_column_name] ]
             lg("Predictors(" + str(len(predictors)) + ") Building XGB Classifier", 6)
 
-            #
-            # Here's the supported api variables from 11/17/2016 build:
-            #
-            # https://github.com/dmlc/xgboost/blob/c52b2faba4d070fb6fe9e0f8fcda34f296522230/python-package/xgboost/sklearn.py#L332
-            model                   = XGBClassifier(learning_rate=learning_rate,
+            model                   = None
+
+            if use_model_cache:
+
+                ra_name             = req["ModelCache"]["RLoc"].split(":")[0]
+                ra_key              = req["ModelCache"]["RLoc"].split(":")[1]
+
+                cached_model_req    = {
+                                        "RAName"    : str(ra_name),
+                                        "RAKey"     : str(ra_key)
+                                    }
+
+                self.lg("Getting Model(" + str(ra_key) + ") from Cache", 6)
+
+                model_results       = self.ml_get_single_model_from_cache(cached_model_req, rds, dbs, debug)
+
+                if model_results["Model"] == None or model_results["Model"] == "":
+                    err_msg         = "Did not find a valid Model(" + str(ra_key) + ") Key(" + str(ra_key) + ") RLoc(" + str(ra_name) + ":" + str(ra_key) + ")"
+                    return self.handle_display_error(err_msg, record, True)
+                else:
+                    self.lg("Found Model(" + str(ra_key) + ") from Cache", 6)
+                    model           = model_results["Model"]
+                # end of if the found the model
+            else:
+                #
+                # Here's the supported api variables from 11/17/2016 build:
+                #
+                # https://github.com/dmlc/xgboost/blob/c52b2faba4d070fb6fe9e0f8fcda34f296522230/python-package/xgboost/sklearn.py#L332
+                model               = XGBClassifier(learning_rate=learning_rate,
                                             n_estimators        = num_estimators,
                                             objective           = objective,
                                             max_depth           = max_depth,
@@ -4014,6 +5136,7 @@ class PyCore:
                                             scale_pos_weight    = scale_pos_weight,
                                             silent              = silent,
                                             seed                = seed)
+            # end of using from cache or not
 
             lg("Training Classifier", 6)
             if cv_enabled:
@@ -4023,51 +5146,72 @@ class PyCore:
                 lg("Building DMatrix for Target(" + str(req["TargetColumnName"]) + ")", 6)
                 xg_training_dmatrix = xgb.DMatrix(req["FeaturesTrain"].values, label=req["TargetTrain"].values)
 
-                lg("Building CV", 6)
-                cvresult            = xgb.cv(params=xgb_param, 
-                                                dtrain                  = xg_training_dmatrix, 
-                                                metrics                 = cv_metrics, 
-                                                num_boost_round         = cv_num_boost_rounds,
-                                                nfold                   = cv_num_folds,
-                                                stratified              = cv_stratified,
-                                                folds                   = cv_folds, 
-                                                seed                    = cv_seed, 
-                                                early_stopping_rounds   = cv_early_stopping_rounds, 
-                                                verbose_eval            = cv_verbose_eval)
-                lg("Setting the model's params", 6)
-                model.set_params(n_estimators=cvresult.shape[0])
+                #lg("Building CV", 6)
+                #cvresult            = xgb.cv(params=xgb_param, 
+                #                                dtrain                  = xg_training_dmatrix, 
+                #                                metrics                 = cv_metrics, 
+                #                                num_boost_round         = cv_num_boost_rounds,
+                #                                nfold                   = cv_num_folds,
+                #                                stratified              = cv_stratified,
+                #                                folds                   = cv_folds, 
+                #                                seed                    = cv_seed, 
+                #                                early_stopping_rounds   = cv_early_stopping_rounds, 
+                #                                verbose_eval            = cv_verbose_eval)
+                #lg("Setting the model's params", 6)
+                #model.set_params(n_estimators=cvresult.shape[0])
             #end of building the cv
                 
-            lg("Fitting XGB - Features(" + str(len(req["TrainFeatureNames"])) \
-                                    + ") TargetColumn(" + str(req["TargetColumnName"]) \
-                                    + ") Train(" + str(len(req["FeaturesTrain"])) \
-                                    + ") Test(" + str(len(req["FeaturesTest"])) \
-                                    + ") Target Train(" + str(len(req["TargetTrain"])) \
-                                    + ") Test(" + str(len(req["TargetTest"])) \
-                                    + ")", 6)
+            if use_model_cache:
+                self.lg("Model already trained and fit", 6)
+            else:
+                lg("Fitting XGB - Features(" + str(len(req["TrainFeatureNames"])) \
+                                        + ") TargetColumn(" + str(req["TargetColumnName"]) \
+                                        + ") Train(" + str(len(req["FeaturesTrain"])) \
+                                        + ") Test(" + str(len(req["FeaturesTest"])) \
+                                        + ") Target Train(" + str(len(req["TargetTrain"])) \
+                                        + ") Test(" + str(len(req["TargetTest"])) \
+                                        + ")", 6)
 
-            model.fit(  X                       = req["FeaturesTrain"], 
-                        y                       = req["TargetTrain"],
-                        sample_weight           = sample_weight,
-                        eval_set                = eval_set,
-                        eval_metric             = eval_metric,
-                        early_stopping_rounds   = early_stopping_rounds,
-                        verbose                 = fit_debug)
+                model.fit(  X                       = req["FeaturesTrain"], 
+                            y                       = req["TargetTrain"],
+                            sample_weight           = sample_weight,
+                            eval_set                = eval_set,
+                            eval_metric             = eval_metric,
+                            early_stopping_rounds   = early_stopping_rounds,
+                            verbose                 = fit_debug)
+            # end of using cache or newly-built model object
 
             lg("Predicting Values", 6)
             #Predict training set:
+
             predictions                 = model.predict(req["FeaturesTest"],
                                                 output_margin   = pred_output_margin,
                                                 ntree_limit     = pred_ntree_limit)
+            
+            predictions_df              = pd.DataFrame({
+                                            "index"         : req["FeaturesTest"].index,
+                                            "TargetTest"    : req["TargetTest"].values,
+                                            "Prediction"    : predictions
+                                        }).sort_values(by="index").set_index("index")
 
             proba_predictions           = model.predict_proba(req["FeaturesTest"],
                                                 output_margin   = proba_output_margin,
                                                 ntree_limit     = proba_ntree_limit)[:,1]
                 
-            #Print model report:
+            lg("Building Accuracy", 6)
+            accuracy                = None
+            try:
+                accuracy            = model.score(req["FeaturesTest"], req["TargetTest"])
+            except Exception,x:
+                self.lg("Unable to build Accuracy for TargetColumnName(" + str(req["TargetColumnName"]) + ")", 6)
+
             max_prediction          = predictions.max()
             min_prediction          = predictions.min()
-            auroc_score             = roc_auc_score(req["TargetTest"], predictions)
+            auroc_score             = None
+            try:
+                auroc_score         = roc_auc_score(req["TargetTest"], predictions)
+            except Exception,x:
+                self.lg("Unable to build AUROC for TargetColumnName(" + str(req["TargetColumnName"]) + ")", 6)
             rankings                = []
             
             lg("Predictions(" + str(len(predictions)) + ") Max(" + str(max_prediction) + ") Min(" + str(min_prediction) + ") AUROC(" + str(auroc_score) + ") Rankings(" + str(len(rankings)) + ")", 6)
@@ -4075,17 +5219,30 @@ class PyCore:
             record["TargetColumnName"] = str(req["TargetColumnName"])
             record["MLAlgoName"]    = str(req["MLAlgo"]["Name"])
             record["FeatureNames"]  = req["TrainFeatureNames"]
-            record["AUROC"]         = auroc_score
+            record["Accuracy"]      = accuracy
+            record["CVResults"]     = None
             record["Predictions"]   = predictions
+            record["PredictionAPI"] = predict_api_node
+            record["ProbaPredAPI"]  = predictproba_api_node
+            record["Predictions"]   = predictions
+            record["PredictionsDF"] = predictions_df
+            record["ProbaPredsDF"]  = None
+            record["ProbaPreds"]    = None
             record["Model"]         = model
             record["Rankings"]      = rankings
+            record["AUROC"]         = auroc_score
         
-            feat_imp = pd.Series(model.booster().get_fscore()).sort_values(ascending=False)
-            feat_imp.plot(kind='bar', title='Feature Importances')
-            plt.ylabel('Feature Importance Score')    
+            lg("Building ConfusionMatrix", 6)
+            cm                      = ConfusionMatrix(req["TargetTest"].tolist(), predictions, labels=target_column_values)
+            record["ConfusionMatrix"]   = cm
 
-            plt.show()
-
+            if os.getenv("ENV_SHOW_XGB_CLASSIFIER_PLOT", "0") == "1":
+                feat_imp = pd.Series(model.booster().get_fscore()).sort_values(ascending=False)
+                feat_imp.plot(kind='bar', title='Feature Importances')
+                plt.ylabel('Feature Importance Score')    
+                plt.show()
+            # end of showing feature importance
+            
             results                 = self.build_def_hash(status, err_msg, record)
 
         except Exception,k:
@@ -4104,7 +5261,7 @@ class PyCore:
 
         status                      = "Display Error"
         err_msg                     = ""
-        record                      = self.ml_build_res_node()
+        record                      = self.ml_build_res_node(req)
         results                     = self.build_def_hash(status, err_msg, record)
 
         try:
@@ -4125,7 +5282,7 @@ class PyCore:
             
             target_column_name      = req["TargetColumnName"]
             feature_names           = req["TrainFeatureNames"]
-            target_names            = req["TargetNames"]
+            target_column_values    = req["TargetColumnValues"]
 
             # Assign meta data
             algo_meta_data          = req["MLAlgo"]["Steps"]
@@ -4265,10 +5422,6 @@ class PyCore:
             predictors              = [x for x in req["FeaturesTrain"].columns if x not in [target_column_name] ]
             self.lg("Predictors(" + str(len(predictors)) + ") Building XGB Regressor", 6)
 
-            #
-            # Here's the supported api variables from 11/17/2016 build:
-            #
-            # https://github.com/dmlc/xgboost/blob/c52b2faba4d070fb6fe9e0f8fcda34f296522230/python-package/xgboost/sklearn.py#L332
             model                   = None
 
             if use_model_cache:
@@ -4293,7 +5446,10 @@ class PyCore:
                     model           = model_results["Model"]
                 # end of if the found the model
             else:
-
+                #
+                # Here's the supported api variables from 11/17/2016 build:
+                #
+                # https://github.com/dmlc/xgboost/blob/c52b2faba4d070fb6fe9e0f8fcda34f296522230/python-package/xgboost/sklearn.py#L332
                 model               = XGBRegressor(learning_rate=learning_rate,
                                             n_estimators        = num_estimators,
                                             objective           = objective,
@@ -4354,6 +5510,7 @@ class PyCore:
                             eval_metric             = eval_metric,
                             early_stopping_rounds   = early_stopping_rounds,
                             verbose                 = fit_debug)
+            # end of using cache or newly-built model object
 
             self.lg("Predicting Values", 6)
             #Predict training set:
@@ -4369,7 +5526,12 @@ class PyCore:
 
             #Print model report:
             self.lg("Scoring Model with FeaturesTest and TargetTest", 6)
-            accuracy                = model.score(req["FeaturesTest"], req["TargetTest"])
+            lg("Building Accuracy", 6)
+            accuracy                = None
+            try:
+                accuracy            = model.score(req["FeaturesTest"], req["TargetTest"])
+            except Exception,x:
+                self.lg("Unable to build Accuracy for TargetColumnName(" + str(req["TargetColumnName"]) + ")", 6)
             
             max_prediction          = predictions.max()
             min_prediction          = predictions.min()
@@ -4381,6 +5543,7 @@ class PyCore:
             record["MLAlgoName"]    = str(req["MLAlgo"]["Name"])
             record["FeatureNames"]  = req["TrainFeatureNames"]
             record["Accuracy"]      = accuracy
+            record["CVResults"]     = None
             record["PredictionAPI"] = predict_api_node
             record["ProbaPredAPI"]  = predictproba_api_node
             record["Predictions"]   = predictions
@@ -4388,6 +5551,7 @@ class PyCore:
             record["ProbaPredsDF"]  = None
             record["Model"]         = model
             record["Rankings"]      = rankings
+            record["AUROC"]         = None      # http://scikit-learn.org/stable/modules/model_evaluation.html - No AUROC on a regression
         
             #Choose all predictors except target & IDcols
             results                 = self.build_def_hash(status, err_msg, record)
@@ -4460,6 +5624,66 @@ class PyCore:
     # end of ml_build_newest_prediction_with_model
 
 
+    def ml_determine_model_prediction(self, req, debug=False):
+
+        predict_row_df      = req["PredictRow"]
+        prediction_mask     = req["PredictionMask"]
+        train_features      = req["FeatureNames"]
+        target_column       = req["TargetColumnName"]
+
+        lg("Determine Model Prediction", 6)
+
+        prediction_value    = None
+        feature_test_row    = predict_row_df
+        feature_test_df     = predict_row_df[train_features]
+        target_test_df      = predict_row_df[target_column]
+
+        # test= [1,2,3,4,5,6,7,8] since it's date sorted make sure to slice it the right way
+        # print test[-1:]
+        # [8]
+        feature_test_row    = feature_test_df
+        target_test_row     = target_test_df
+
+        if req["MLAlgoName"] == "xgb-regressor":
+            predictions     = req["Model"].predict(feature_test_row,
+                                        output_margin   = req["PredictionAPI"]["OutputMargin"],
+                                        ntree_limit     = req["PredictionAPI"]["NumTreeLimit"])
+
+            prediction_value = predictions[-1]
+
+        elif req["MLAlgoName"] == "xgb-classifier":
+            predictions     = req["Model"].predict(feature_test_row,
+                                        output_margin   = req["PredictionAPI"]["OutputMargin"],
+                                        ntree_limit     = req["PredictionAPI"]["NumTreeLimit"])
+
+            prediction_value = predictions[-1]
+        else:
+            self.lg("ERROR: Unsupported Predictor(" + str(req["MLAlgoName"]) + ")", 0)
+            self.lg("ERROR: Unsupported Predictor(" + str(req["MLAlgoName"]) + ")", 0)
+            self.lg("ERROR: Unsupported Predictor(" + str(req["MLAlgoName"]) + ")", 0)
+            
+        if prediction_value != None:
+            if debug:
+                print "ML Model is Predicting(" + str(prediction_date) + ") '" + str(target_column) + "' will be: " + str(prediction_value)
+        else:
+            lg("ERROR: FAILED to Predict(" + str(predict_row_df) + ")", 0)
+
+        now                 = datetime.datetime.now()
+
+        marker              = {
+                                "Date"              : now.strftime("%Y-%m-%d %H:%M:%S"),
+                                "PredictionValue"   : prediction_value,
+                                "PredictionAPI"     : req["PredictionAPI"],
+                                "ProbaPredAPI"      : req["ProbaPredAPI"],
+                                "TargetColumnName"  : target_column,
+                                "FeatureTestRow"    : feature_test_row,
+                                "TargetTestRow"     : target_test_row
+                            }
+
+        return marker
+    # end of ml_determine_model_prediction
+
+
     def ml_return_prediction_dates(self, simulated_date, ahead_set, ahead_type, rds, dbs, debug=False):
 
         import pandas as pd
@@ -4477,7 +5701,7 @@ class PyCore:
                                     }
                 prediction_dates[str(n)] = new_prediction_date
             # just get a simple dict of prediction dates
-        # end of all days ahead
+        # end of all units in ahead_set
 
         return prediction_dates
     # end of ml_return_prediction_dates
@@ -4508,7 +5732,27 @@ class PyCore:
     # end of sb_initialize_fonts
 
 
-    def sb_plot_model_feature_importance(self, ml_model, x_label, y_label, plot_title, max_features=-1):
+    def sb_model_feature_importance(self, req, debug=False):
+    
+        image_list      = []
+        image_filename  = req["ImgFile"]
+        ml_model        = req["Model"]
+        x_label         = req["XLabel"]
+        y_label         = req["YLabel"]
+        plot_title      = req["Title"]
+        max_features    = -1
+        cur_xlabel      = "Dates"
+        cur_width       = 15.0
+        cur_height      = 15.0
+
+        if "MaxFeatures" in req:
+            max_features= int(req["MaxFeatures"])
+        if "XLabel" in req:
+            cur_xlabel  = str(req["XLabel"])
+        if "Width" in req:
+            cur_width   = float(req["Width"])
+        if "Height" in req:
+            cur_height  = float(req["Height"])
 
         import pandas as pd
         import numpy as np
@@ -4517,7 +5761,8 @@ class PyCore:
 
         series_feat_imp = pd.Series(ml_model.booster().get_fscore()).sort_values(ascending=False).iloc[0:max_features]
         df_feat_imp     = pd.DataFrame({x_label : series_feat_imp.index, y_label : series_feat_imp.values})
-
+        
+        plt.figure(figsize=(cur_width, cur_height))
         ax              = sns.barplot(  x           = x_label, 
                                         y           = y_label, 
                                         hue         = x_label, 
@@ -4529,11 +5774,32 @@ class PyCore:
         ax.set(xlabel=x_label, ylabel=y_label)
         sns.plt.legend(loc='best')
 
-        plt.show()
-    # end of sb_plot_model_feature_importance
+        if image_filename != "":
+            if debug:
+                self.lg("Saving File(" + str(image_filename) + ")", 6)
+            fig = ax.get_figure()
+            fig.savefig(image_filename)
+
+            if os.path.exists(image_filename) == False:
+                err_msg = "Failed to save image file(" + str(image_filename) + ")"
+                lg("WARNING: " + str(err_msg), 1)
+            else:
+                image_list.append(image_filename)
+                if debug:
+                    lg("Saved File: " + str(image_filename), 6)
+            # end of if the image file was saved
+        # end of if image file
+
+        if req["ShowPlot"] == True:
+            plt.show()
+
+        return image_list
+    # end of sb_model_feature_importance
 
 
-    def sb_plot_xgb_regression_line(self, prediction_df, x_col_name, x_label, y_label, target_label, prediction_label, plot_title, image_filename="", show_plot=False):
+    def sb_plot_xgb_regression_line(self, prediction_df, x_col_name, x_label, y_label, target_label, prediction_label, plot_title, image_filename="", show_plot=False, debug=False):
+
+        image_list      = []
 
         import pandas as pd
         import numpy as np
@@ -4559,12 +5825,617 @@ class PyCore:
 
         if show_plot:
             plt.show()
-        else:
-            if image_filename != "":
+
+        if image_filename != "":
+            if debug:
                 self.lg("Saving File(" + str(image_filename) + ")", 6)
-                fig = ax.get_figure()
-                fig.savefig(image_filename)
+            fig = ax.get_figure()
+            fig.savefig(image_filename)
+
+            if os.path.exists(image_filename) == False:
+                err_msg = "Failed to save image file(" + str(image_filename) + ")"
+                lg("WARNING: " + str(err_msg), 1)
+            else:
+                image_list.append(image_filename)
+                if debug:
+                    lg("Saved File: " + str(image_filename), 6)
+            # end of if the image file was saved
+        # end of if image file
+
+        return image_list
     # end of sb_plot_xgb_regression_line
+
+
+    def sb_plot_predictions(self, req, debug=False):
+            
+        image_list      = []
+
+        image_filename  = req["ImgFile"]
+
+        import seaborn as sns 
+        import numpy as np
+        from matplotlib import pyplot
+        import matplotlib.pyplot as plt
+        import matplotlib.dates as mdates
+        from matplotlib.patches import Rectangle
+        from matplotlib.finance import volume_overlay
+        import pandas as pd
+        from pandas.tseries.offsets import BDay
+
+        predictions_df  = req["PredictionsDF"]
+        ds_name         = req["DSName"]
+
+        sns.set_style("whitegrid", {'axes.grid' : True})
+        sns.color_palette("Set1", n_colors=8, desat=.5)
+
+        cur_xlabel      = "Dates"
+        cur_width       = 15.0
+        cur_height      = 15.0
+
+        if "XLabel" in req:
+            cur_xlabel  = str(req["XLabel"])
+        if "Width" in req:
+            cur_width   = float(req["Width"])
+        if "Height" in req:
+            cur_height  = float(req["Height"])
+
+        fig, ax     = plt.subplots(figsize=(cur_width, cur_height))
+
+        # Add custom plots here
+
+        for plot_idx,plot_node in enumerate(req["Predictions"]):
+
+            x_axis  = plot_node["XCol"]
+            y_axis  = plot_node["YCol"]
+            label   = plot_node["Label"]
+            color   = self.pd_get_color_from_id(plot_idx)
+            alpha   = 1.0
+            if "Color" in plot_node:
+                color   = self.pd_get_color(plot_node["Color"])
+            if "Alpha" in plot_node:
+                alpha   = float(plot_node["Alpha"])
+
+            ax.plot(predictions_df[x_axis], predictions_df[y_axis], label=label, color=color, alpha=alpha)
+        # end of for all plots
+
+        plt.grid(True)
+        plt.xlabel("Dates")
+        plt.ylabel(ds_name + " Targets")
+
+        # Build a Date title
+        start_date = str(predictions_df.iloc[0]["Date"].strftime('%Y-%m-%d'))
+        end_date   = str(predictions_df.iloc[-1]["Date"].strftime('%Y-%m-%d'))
+        ax.set_title(ds_name + " Predictions from " + str(start_date) + " to " + str(end_date))
+
+        # Merge in the second axis (Volume) Legend
+        handles, labels = pyplot.gca().get_legend_handles_labels()
+        newLabels, newHandles = [], []
+        for handle, label in zip(handles, labels):
+            if label not in newLabels:
+                newLabels.append(label)
+                newHandles.append(handle)
+
+        lines           = ax.get_lines() + newHandles
+        unique_labels   = []
+        already_stored  = {}
+        for l in lines:
+            new_label   = str(l.get_label())
+            if str(new_label) not in already_stored:
+                unique_labels.append(l)
+                already_stored[str(new_label)] = True
+        # end of building list
+
+        leg = plt.legend(handles=unique_labels, loc="best", frameon=True)
+        leg.get_frame().set_edgecolor("#696969")
+        leg.get_frame().set_linewidth(2)
+
+        # Build out the xtick chart by the dates
+        ax.xaxis.grid(True, which='minor')
+        xfmt = mdates.DateFormatter('%Y-%m-%d')
+        ax.xaxis.set_major_formatter(xfmt)
+        ax.xaxis.set_minor_formatter(xfmt)
+
+        xtick       = predictions_df["Date"].tolist()
+        xticklabels = [dt.strftime("%b-%d") for dt in xtick]
+        ax.set_xticks( xtick, minor=False )
+        ax.set_xticklabels( xticklabels, rotation=90, minor=False )
+
+        self.lg("Saving File(" + str(image_filename) + ")", 6)
+        fig = ax.get_figure()
+        fig.savefig(image_filename)
+        image_list.append(image_filename)
+
+        if req["ShowPlot"] == True:
+            plt.show()
+
+        return image_list
+    # end of sb_plot_predictions
+
+
+    def sb_plot_all_predictive_accuracy(self, req, debug=False):
+
+        images_list                 = []
+        pk_show_plot                = bool(req["ShowPlot"])
+        ds_name                     = str(req["DSName"]).replace(" ", "-")
+        units_ahead_type            = str(req["UnitsAheadType"])
+        
+        label_suffix                = ""
+        x_column_name               = "Date"
+        x_column_label              = "Date"
+
+        if "XColName" in req:
+            x_column_name           = str(req["XColName"])
+        if "XColLabel" in req:
+            x_column_label          = str(req["XColLabel"])
+        if "LabelSuffix" in req:
+            label_suffix            = str(req["LabelSuffix"])
+
+        if len(req["AccuracyResults"]) > 0:
+
+            for key_name in req["AccuracyResults"]:
+                split_type          = key_name.split("_")
+                key_type            = str(split_type[0])
+                cur_units_ahead     = str(split_type[1])
+                dataset_to_plot     = req["AccuracyResults"][key_name]
+                logical_name        = key_name.replace("_", " ")[1:] + " " + str(units_ahead_type)
+                acc_image_name      = "/tmp/" + str(ds_name) + "-" + str(key_name) + "-Prediction-Accuracy.png"
+                if os.path.exists(acc_image_name):
+                    os.system("rm -f " + str(acc_image_name))
+
+                self.lg("Plotting Regression Forecast with Accuracy(" + str(key_name) + ") ImageFile(" + str(acc_image_name) + ")", 6)
+                pred_df             = self.ml_regression_build_prediction_results_df(dataset_to_plot["PredictionsDF"], dataset_to_plot["SourceDF"], "index")
+                # Build the prediction results
+                pred_x_col_name     = x_column_name
+                pred_x_label        = x_column_label
+                pred_y_col_name     = logical_name
+                pred_y_label        = logical_name
+                if label_suffix != "":
+                    pred_y_col_name = logical_name + " " + str(label_suffix)
+                    pred_y_label    = logical_name + " " + str(label_suffix)
+
+                pred_target_label   = "Actual " + str(logical_name)
+                pred_label          = "Predicted " + str(logical_name) + " " + str(cur_units_ahead) + " " + str(units_ahead_type) + " ahead"
+                pred_plot_title     = ds_name + " " + str(cur_units_ahead) + "-" + str(units_ahead_type) + " - Predictive Accuracy\nPredicted " + str(logical_name) + " vs Actual " + str(logical_name)
+                if label_suffix != "":
+                    pred_plot_title = ds_name + " " + str(cur_units_ahead) + "-" + str(units_ahead_type) + " - Predictive Accuracy\nPredicted " + str(logical_name) + " " + str(label_suffix) + " vs Actual " + str(logical_name) + " " + str(label_suffix) 
+
+                self.sb_plot_xgb_regression_line(pred_df.iloc[-250:], pred_x_col_name, pred_x_label, pred_y_label, pred_target_label, pred_label, pred_plot_title, acc_image_name, pk_show_plot)
+
+                images_list.append(acc_image_name)
+            # for all nodes in the list, try to plot the regression lines to showcase the predictiveness
+        # if there's more than one
+
+        return images_list
+    # end of sb_plot_all_predictive_accuracy
+
+
+    def sb_confusion_matrix(self, req, debug=False):
+            
+        image_list      = []
+
+        image_filename  = req["ImgFile"]
+
+        import seaborn as sns 
+        import numpy as np
+        from matplotlib import pyplot
+        import matplotlib.pyplot as plt
+        import matplotlib.dates as mdates
+        from matplotlib.patches import Rectangle
+        from matplotlib.finance import volume_overlay
+        import pandas as pd
+        from pandas.tseries.offsets import BDay
+
+        source_df       = req["SourceDF"]
+        ds_name         = req["DSName"]
+
+        sns.set_style("whitegrid", {'axes.grid' : True})
+        sns.color_palette("Set1", n_colors=8, desat=.5)
+
+        cur_xlabel      = "Dates"
+        cur_ylabel      = "Value"
+        cur_width       = 15.0
+        cur_height      = 15.0
+        cur_title       = ds_name + " Confusion Matrix"
+        if "XLabel" in req:
+            cur_xlabel  = str(req["XLabel"])
+        if "YLabel" in req:
+            cur_xlabel  = str(req["YLabel"])
+        if "Width" in req:
+            cur_width   = float(req["Width"])
+        if "Height" in req:
+            cur_height  = float(req["Height"])
+        if "Title" in req:
+            cur_title   = str(req["Title"])
+        # end of parsing inputs
+
+        # Add custom plots here
+
+        for cm_node in req["ConfMatrices"]:
+
+            target_col      = str(cm_node["TargetColumnName"])
+            ax              = cm_node["CM"].plot()
+            plt.title(cur_title + " - " + str(target_col))
+            self.pd_add_footnote(ax.get_figure())
+
+            new_suffix      = "_" + target_col + "_" + str(cm_node["ID"]) + ".png"
+            save_filename   = image_filename.replace(".png", new_suffix)
+
+            fig = ax.get_figure()
+            fig.savefig(save_filename)
+            image_list.append(save_filename)
+
+            if req["ShowPlot"] == True:
+                plt.show()
+        # end of for all confusion matrices
+
+        return image_list
+    # end of sb_confusion_matrix
+
+
+    def sb_pairplot(self, req, debug=False):
+
+        import pandas as pd
+        import numpy as np
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+
+        image_filename  = req["ImgFile"]
+        image_list      = []
+
+	width       	= 10.0
+	height      	= 10.0
+	plot_title  	= "PairPlot"
+	style       	= "default"
+        x_label         = ""
+        y_label         = ""
+        plot_palette    = "Set2"
+        col_targets     = {
+                            "0" : "Good",
+                            "1" : "Bad"
+                        }
+        hue_targets     = {
+                            "0" : "Unknown",
+                        }
+
+        hue_column_name = ""
+        col_column_name = ""
+        map_type        = "scatter"
+        x_col_name      = ""
+        y_col_name      = ""
+        kind            = "reg"
+        diag_kind       = "hist"
+        hue_order       = None
+        markers         = None
+        aspect          = 1
+        drop_na         = False
+        size            = 2.5
+        plot_columns    = []
+        cur_width       = 7.0
+        cur_height      = 7.0
+
+        if "Width" in req:
+            cur_width   = float(req["Width"])
+        if "Height" in req:
+            cur_height  = float(req["Height"])
+        if "Title" in req:
+            plot_title  = str(req["Title"])
+        if "Style" in req:
+            style       = str(req["Style"])
+        if "XLabel" in req:
+            x_label     = str(req["XLabel"])
+        if "YLabel" in req:
+            y_label     = str(req["YLabel"])
+        if "Size" in req:
+            size        = float(req["Size"])
+        if "Palette" in req:
+            plot_palette= str(req["Palette"])
+        if "HueColumnName" in req:
+            hue_column_name= str(req["HueColumnName"])
+        if "ColColumnName" in req:
+            col_column_name= str(req["ColColumnName"])
+        if "MapType" in req:
+            map_type    = str(req["MapType"])
+        if "ColTargetDict" in req:
+            col_targets = req["ColTargetDict"]
+        if "HueTargetDict" in req:
+            hue_targets = req["HueTargetDict"]
+        if "XColumnName" in req:
+            x_col_name  = str(req["XColumnName"])
+        if "YColumnName" in req:
+            y_col_name  = str(req["YColumnName"])
+        if "PlotKind" in req:
+            kind        = str(req["PlotKind"])
+        if "DiagKind" in req:
+            diag_kind   = str(req["DiagKind"])
+        if "HueOrder" in req:
+            if len(req["HueOrder"]) > 0:
+                hue_order   = req["HueOrder"]
+            else:
+                hue_order   = None
+        if "Markers" in req:
+            if len(req["Markers"]) > 0:
+                markers = req["Markers"]
+            else:
+                markers = None
+        if "Aspect" in req:
+            aspect      = req["Aspect"]
+        if "DropNA" in req:
+            drop_na     = bool(req["DropNA"])
+        if "CompareColumns" in req:
+            plot_columns= req["CompareColumns"]
+
+        # Start Processing Request 
+
+        if style == "default":
+            #sns.set_context("poster")
+            sns.color_palette("Set2", 10)
+            sns.axes_style("darkgrid")
+
+        max_col         = 4
+        num_fts         = len(plot_columns)
+        max_plots       = int(num_fts / max_col) 
+        max_plot_idx    = max_plots + 1
+        start_idx       = 0
+        ahead_idx       = (start_idx + max_col)
+        plot_idx        = 1
+        if max_plots == 0:
+            max_plots   = 1
+            plot_idx    = 0
+
+        for i in range(max_plots):
+            stop        = False
+            if ahead_idx > num_fts:
+                stop        = True
+                ahead_idx   = -1
+    
+            sub_fts         = plot_columns[start_idx:ahead_idx]
+    
+            start_idx       += max_col
+            ahead_idx       = (start_idx + max_col) 
+
+            found_in_list   = False
+            for node in sub_fts:
+                if str(hue_column_name) == node:
+                    found_in_list   = True
+
+            if not found_in_list:
+                if hue_column_name != "":
+                    sub_fts.append(hue_column_name)
+            
+            if len(sub_fts) > 0:
+
+                self.sb_initialize_fonts(12, 12, 12)
+                grid = sns.pairplot(data        = req["SourceDF"][sub_fts], 
+                                    hue         = hue_column_name,
+                                    palette     = plot_palette,
+                                    markers     = markers,
+                                    dropna      = True,
+                                    kind        = kind,
+                                    diag_kind   = diag_kind,
+                                    size        = size)
+
+                #sns.plt.legend(loc='best')
+                sub_plot_title   = "Analysis(" + str(plot_idx) + "/" + str(max_plot_idx-1) + "): " + str(json.dumps(sub_fts)).replace("[", "").replace("]", "")
+                if plot_title == "":
+                    grid.fig.suptitle(sub_plot_title)
+                else:
+                    grid.fig.suptitle(plot_title)
+
+                grid.fig.get_children()[-1].set_bbox_to_anchor((1.1, 0.5, 0, 0))
+                self.pd_add_footnote(grid.fig)
+
+                if max_plots == 1:
+                    save_filename   = image_filename
+                else:
+                    new_suffix      = "_" + str(plot_idx) + ".png"
+                    save_filename   = image_filename.replace(".png", new_suffix)
+
+                grid.fig.set_figwidth(cur_width)
+                grid.fig.set_figheight(cur_height)
+
+                grid.fig.savefig(save_filename)
+                image_list.append(save_filename)
+
+                if req["ShowPlot"] == True:
+                    plt.show()
+
+            plot_idx    += 1
+
+            if stop:
+                break
+        # end of all features
+
+        return image_list
+    # end of sb_pairplot
+
+
+    def sb_scatter(self, req, debug=False):
+            
+        image_list      = []
+
+        image_filename  = req["ImgFile"]
+
+        import seaborn as sns 
+        import numpy as np
+        from matplotlib import pyplot
+        import matplotlib.pyplot as plt
+        import matplotlib.dates as mdates
+        from matplotlib.patches import Rectangle
+        from matplotlib.finance import volume_overlay
+        import pandas as pd
+        from pandas.tseries.offsets import BDay
+
+        source_df       = req["SourceDF"]
+        ds_name         = req["DSName"]
+
+        sns.set_style("whitegrid", {'axes.grid' : True})
+        sns.color_palette("Set1", n_colors=8, desat=.5)
+
+        cur_xlabel      = "measurement"
+        cur_ylabel      = "value"
+        cur_hue         = "ResultLabel"
+        cur_width       = 10.0
+        cur_height      = 10.0
+        if "X" in req:
+            cur_xlabel  = str(req["X"])
+        if "Y" in req:
+            cur_ylabel  = str(req["Y"])
+        if "Width" in req:
+            cur_width   = float(req["Width"])
+        if "Height" in req:
+            cur_height  = float(req["Height"])
+        if "Hue" in req:
+            cur_hue     = str(req["Hue"])
+        # end of parsing inputs
+
+        # Add custom plots here
+
+        plt.figure(figsize=(cur_width, cur_height))
+        ax              = sns.swarmplot(x=cur_xlabel, y=cur_ylabel, hue=cur_hue, data=source_df)
+
+        if debug:
+            self.lg("Saving File(" + str(image_filename) + ")", 6)
+
+        self.pd_add_footnote(ax.figure)
+        ax.figure.savefig(image_filename)
+        image_list.append(image_filename)
+
+        if req["ShowPlot"] == True:
+            plt.show()
+
+        return image_list
+    # end of sb_scatter
+
+    
+    def sb_all_scatterplots(self, req, debug=False):
+
+        org_image_filename  = req["ImgFile"]
+        feature_column_names= req["FeatureColumnNames"]
+        image_list          = []
+        plot_idx            = 0
+        already_done        = {}
+        for cur_x in feature_column_names:
+            for cur_y in feature_column_names:
+                if cur_x != cur_y and cur_x not in already_done:
+                    new_suffix          = "_" + str(plot_idx) + ".png"
+                    save_filename       = org_image_filename.replace(".png", new_suffix)
+
+                    new_req             = req
+                    new_req["X"]        = cur_x
+                    new_req["Y"]        = cur_y
+                    new_req["ImgFile"]  = save_filename
+                    new_req["SourceDF"] = req["SourceDF"]
+                    new_req["ShowPlot"] = req["ShowPlot"]
+                    new_req["DSName"]   = req["DSName"]
+
+                    new_images          = self.sb_scatter(new_req, debug)
+                    for new_img in new_images:
+                        image_list.append(new_img)
+        
+                    already_done[cur_x] = True
+                    plot_idx        += 1
+                # end for all names that are not the same
+            # end for all y
+        # end for all x
+                
+        return image_list
+    # end of sb_all_scatterplots
+
+
+    def sb_jointplot(self, req, debug=False):
+            
+        image_list      = []
+
+        image_filename  = req["ImgFile"]
+
+        import seaborn as sns 
+        import numpy as np
+        from matplotlib import pyplot
+        import matplotlib.pyplot as plt
+        import matplotlib.dates as mdates
+        from matplotlib.patches import Rectangle
+        from matplotlib.finance import volume_overlay
+        import pandas as pd
+        from pandas.tseries.offsets import BDay
+
+        source_df       = req["SourceDF"]
+        ds_name         = req["DSName"]
+
+        sns.set_style("whitegrid", {'axes.grid' : True})
+        sns.color_palette("Set1", n_colors=8, desat=.5)
+
+        cur_xlabel      = "measurement"
+        cur_ylabel      = "value"
+        cur_kind        = "reg"
+        cur_width       = 15.0
+        cur_height      = 15.0
+        if "X" in req:
+            cur_xlabel  = str(req["X"])
+        if "Y" in req:
+            cur_ylabel  = str(req["Y"])
+        if "Width" in req:
+            cur_width   = float(req["Width"])
+        if "Height" in req:
+            cur_height  = float(req["Height"])
+        if "Kind" in req:
+            cur_kind    = str(req["Kind"])
+        # end of parsing inputs
+
+        # Add custom plots here
+
+        grid            = sns.jointplot(cur_xlabel, cur_ylabel, kind=cur_kind, data=source_df, annot_kws=dict(stat="r"))
+
+        if debug:
+            self.lg("Saving File(" + str(image_filename) + ")", 6)
+                
+        grid.fig.set_figwidth(cur_width)
+        grid.fig.set_figheight(cur_height)
+
+        ax              = grid.ax_joint
+        self.pd_add_footnote(ax.figure)
+        ax.figure.savefig(image_filename)
+        image_list.append(image_filename)
+
+        if req["ShowPlot"] == True:
+            plt.show()
+
+        return image_list
+    # end of sb_jointplot
+
+    
+    def sb_all_jointplots(self, req, debug=False):
+
+        org_image_filename  = req["ImgFile"]
+        feature_column_names= req["FeatureColumnNames"]
+        image_list          = []
+        plot_idx            = 0
+        already_done        = {}
+        for cur_x in feature_column_names:
+            for cur_y in feature_column_names:
+                if cur_x != cur_y and cur_x not in already_done:
+                    new_suffix          = "_" + str(plot_idx) + ".png"
+                    save_filename       = org_image_filename.replace(".png", new_suffix)
+
+                    new_req             = req
+                    new_req["X"]        = cur_x
+                    new_req["Y"]        = cur_y
+                    new_req["ImgFile"]  = save_filename
+                    new_req["SourceDF"] = req["SourceDF"]
+                    new_req["ShowPlot"] = req["ShowPlot"]
+                    new_req["DSName"]   = req["DSName"]
+
+                    new_images          = self.sb_jointplot(new_req, debug)
+                    for new_img in new_images:
+                        image_list.append(new_img)
+        
+                    already_done[cur_x] = True
+                    plot_idx        += 1
+                # end for all names that are not the same
+            # end for all y
+        # end for all x
+                
+        return image_list
+    # end of sb_all_jointplots
 
 
     #####################################################################################################
@@ -4703,8 +6574,8 @@ class PyCore:
             import pandas as pd
 
             ml_type                     = request_args["MLType"]
-            target_column_name          = request_args["TargetColumnName"]      # What column is getting processed
-            feature_remove_these        = request_args["IgnoreFeatures"]        # Prune non-int/float columns as needed: 
+            target_column_name          = request_args["TargetColumnName"]  # What column is getting processed
+            feature_remove_these        = request_args["IgnoreFeatures"]    # Prune non-int/float columns as needed: 
             ml_csv                      = request_args["CSVFile"]
             if os.path.exists(ml_csv) == False:
                 err_msg                 = "Failed to find CSV File(" + str(ml_csv) + ")"
@@ -4721,7 +6592,8 @@ class PyCore:
             for fn in new_feature_names:
                 add_column              = True
                 for ig in feature_remove_these:
-                    if str(fn).lower() == str(ig).lower():
+                    if str(fn).lower() == str(ig).lower() \
+                        or "unnamed: " in str(fn).lower():
                         add_column      = False
                         break
                 # end of for all to skip
@@ -4729,7 +6601,8 @@ class PyCore:
                 if add_column:
                     org_feature_names.append(fn)
 
-                    if str(target_column_name).lower() != str(fn).lower():
+                    if str(target_column_name).lower() != str(fn).lower() \
+                        and "unnamed: " not in str(fn).lower():
                         fit_feature_names.append(fn)
             # only add those columns that can be changed
 
@@ -4771,7 +6644,7 @@ class PyCore:
 
             ml_type                     = request_args["MLType"]
             target_column_name          = request_args["TargetColumnName"]      # What column is getting processed
-            target_names                = request_args["TargetNames"]           # possible values each int in the target_column_name maps to
+            target_column_values        = request_args["TargetColumnValues"]    # possible values each int in the target_column_name maps to
             train_feature_names         = request_args["TrainFeatures"]         # pass in the features to train
             source_df                   = request_args["SourceDF"]
             sample_filter_mask          = request_args["SampleMask"]

@@ -16,6 +16,28 @@ if [[ ! -e /opt/work ]]; then
     fi
 fi
 
+if [[ ! -e ${ENV_SCP_VENV_BASE_DIR} ]]; then
+
+    lg "Creating Virtual Environment Base Dir Path: ${ENV_SCP_VENV_BASE_DIR}"
+    mkdir -p -m 777 $ENV_SCP_VENV_BASE_DIR
+    last_status=$?
+    if [[ "${last_status}" != "0" ]]; then
+        err "Creating Virtual Environment Base Dir Path Failed: ${ENV_SCP_VENV_BASE_DIR}"
+        lg ""
+        lg "mkdir -p -m 777 ${ENV_SCP_VENV_BASE_DIR}"
+        lg ""
+        exit 1
+    fi
+
+    if [[ ! -e ${ENV_SCP_VENV_BASE_DIR} ]]; then
+        err "Creating Virtual Environment Failed to Create Dir: ${ENV_SCP_VENV_BASE_DIR}"
+        lg ""
+        lg "mkdir -p -m 777 ${ENV_SCP_VENV_BASE_DIR}"
+        lg ""
+        exit 1
+    fi
+fi
+
 lg "Creating VirtualEnv(${ENV_SCP_VENV_NAME}) Path(${ENV_SCP_VENV_PATH})"
 
 pushd $ENV_SCP_VENV_BASE_DIR >> /dev/null
@@ -39,7 +61,9 @@ echo ""
 echo "---------------------------------------------------------"
 echo "Activate the new Scipype virtualenv with:"
 echo ""
-echo "source ${ENV_SCP_VENV_ACTIVATE}"
+echo "source ./dev-properties.sh"
+echo "   or:"
+echo "source ./properties.sh"
 echo ""
 
 exit 0

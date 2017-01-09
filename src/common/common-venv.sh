@@ -1,4 +1,4 @@
-export ENV_SCP_VENV_BASE_DIR="/tmp"
+export ENV_SCP_VENV_BASE_DIR="/opt/venv"
 export ENV_SCP_VENV_NAME="scipype"
 export ENV_SCP_VENV_PATH="${ENV_SCP_VENV_BASE_DIR}/${ENV_SCP_VENV_NAME}"
 export ENV_SCP_VENV_BIN="${ENV_SCP_VENV_PATH}/bin"
