@@ -2,7 +2,7 @@
 Sci-Pype - A Machine Learning Framework for Sharing Models and Analysis
 =======================================================================
 
-Sci-Pype is a framework for analyzing datasets using Python 2.7 and extended from the `Jupyter Scipy-Notebook`_ and a supported command line version. It was built to make data analysis easier by providing an API to build, train, test, predict, validate, analyze, extract, archive, and import Models and Analysis datasets with: S3 and redis (Kafka coming soon). After building and training the requested Models with a dataset, they are cached in redis along with their respective Analysis. After they are cached, they can be extracted and shared using S3. From S3, the Models can be imported back into redis for making new predictions using the same API. 
+Sci-Pype is a framework for analyzing datasets using Python 2.7 and extended from the `Jupyter Scipy-Notebook`_ with a supported command line version (no docker or Jupyter required). It was built to make data analysis easier by providing an API to build, train, test, predict, validate, analyze, extract, archive, and import Models and Analysis datasets with: S3 and redis (Kafka coming soon). After building and training the requested Models with a dataset, they are cached in redis along with their respective Analysis. After they are cached, they can be extracted and shared using S3. From S3, the Models can be imported back into redis for making new predictions using the same API. 
 
 .. figure:: ./examples/images/v2/Scipype-Seaborn-Visuals.png
     :alt: Sci-Pype - A Machine Learning Framework for Sharing Models and Analysis
