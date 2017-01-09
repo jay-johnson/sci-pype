@@ -21,7 +21,7 @@ Please note this is a `large docker container`_ so it may take some time to down
 Notebook Examples
 =================
 
-Please refer to the `examples directory`_ for the latest notebooks. Most of the notebooks and command line tools require running with a redis server listing on port 6000 (``<repo base dir>/dev-start.sh`` will start one). 
+Please refer to the `examples directory`_ for the latest notebooks. Most of the notebooks and command line tools require running with a redis server listening on port 6000 (``<repo base dir>/dev-start.sh`` will start one). 
 
 .. _examples directory: https://github.com/jay-johnson/sci-pype/tree/master/examples
 
@@ -59,7 +59,7 @@ Please refer to the `examples directory`_ for the latest notebooks. Most of the 
 Command Line Examples
 =====================
 
-Most of the notebooks and command line tools require running with a redis server listing on port 6000 (``<repo base dir>/dev-start.sh`` will start one). The command line versions that do not require docker or Jupyter can be found:
+Most of the notebooks and command line tools require running with a redis server listening on port 6000 (``<repo base dir>/dev-start.sh`` will start one). The command line versions that do not require docker or Jupyter can be found:
 
 ::
     
