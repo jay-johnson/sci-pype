@@ -12,8 +12,6 @@ Sci-Pype is a framework for analyzing datasets using Python 2.7 and extended fro
 
 Common use cases for this framework are sharing Analysis notebooks and then automating new predictions with email delivery using AWS SES. With this native caching + deployment layer, you can build, train and use the supported Machine Learning Algorithms and Models across multiple environments (including multi-tenant ones). Once trained, you can extract the Models as a compressed, serialized ``Model file`` (like a build artifact) that is uploaded to S3. Importing a ``Model file`` decompresses the file and stores the Pickle-serialized Models + Analysis objects in redis. In production, it might be useful to house larger Models in something like a `load-balanced redis cluster`_ for sharing and making new predictions across a team or by automation.
 
-A Machine Learning API with native redis caching and export + import using S3. Analyze entire datasets using an API for building, training, testing, analyzing, extracting, importing, and archiving. This repository can run from a docker container or from the repository. 
-
 Please note this is a `large docker container`_ so it may take some time to download and it extracts to ~6.8 GB on disk.
 
 .. _Jupyter Scipy-Notebook: https://github.com/jupyter/docker-stacks/tree/master/scipy-notebook
