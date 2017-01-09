@@ -228,30 +228,9 @@ Here is how to setup Sci-pype to run locally without using docker (and Lambda de
 
     ::
 
-        echo 'source /tmp/scipype/bin/activate' >> ~/.bashrc
+        echo 'source /opt/venv/scipype/bin/activate' >> ~/.bashrc
 
-#.  Update your user's ``PYTHONPATH``
-
-    The ``setup-new-dev.sh`` script will create a symlink that emulates the docker container's volume struture.
-
-    ::
-
-        scipype$ ls -l /opt/ | grep work
-        lrwxrwxrwx  1 driver driver   32 Jan  2 15:56 work -> /home/driver/dev/scipype
-        scipype$ 
-
-    To run the Python 2 source code without being inside the docker container, you will need to add these lines to your ``~/.bashrc`` to automatically setup the Python 2 pathing to find the repository's ``src`` directory just like the docker container.
-
-    ::
-
-        if [[ "${PYTHONPATH}" == "" ]]; then
-            export PYTHONPATH=/opt/work
-        else
-            export PYTHONPATH=${PYTHONPATH}:/opt/work
-        fi
-
-
-#.  Confirm the Demo downloader works in the Virtual Environment
+#.  Confirm the Demo downloader works using the Virtual Environment
 
     Please note: this assumes running from a new terminal to validate the virtual environment activation
 
@@ -259,7 +238,7 @@ Here is how to setup Sci-pype to run locally without using docker (and Lambda de
 
     ::
 
-        scipype$ source ./properties.sh
+        scipype$ source ./dev-properties.sh
 
     Run the Demo
 
@@ -284,7 +263,6 @@ Here is how to setup Sci-pype to run locally without using docker (and Lambda de
     ::
 
         echo 'source /opt/work/properties.sh' >> ~/.bashrc
-
 
 .. _Coming Soon and Known Issues: https://github.com/jay-johnson/sci-pype/blob/master/README.rst#coming-soon-and-known-issues
 
