@@ -86,7 +86,7 @@ Most of the notebooks and command line tools require running with a redis server
 
 
 
-Now you can share, test, and deploy Models  and their respective Analysis from a file in S3 for other Sci-pype users running on different environments.
+Now you can share, test, and deploy Models and their respective Analysis from a file in S3 for other Sci-Pype users running on different environments.
 
 .. _ML-IRIS-Analysis-Workflow-Classification.ipynb: ./examples/ML-IRIS-Analysis-Workflow-Classification.ipynb
 .. _ML-IRIS-Analysis-Workflow-Regression.ipynb: ./examples/ML-IRIS-Analysis-Workflow-Regression.ipynb
@@ -166,7 +166,7 @@ This container can run in four modes:
 Running Locally without Docker
 ==============================
 
-Here is how to setup Sci-pype to run locally without using docker (and Lambda deployments in the future).
+Here is how to run locally without using docker (and Lambda deployments in the future).
 
 #.  Clone the repo without the dash character in the name
 
