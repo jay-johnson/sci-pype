@@ -92,7 +92,7 @@ Now you can share, test, and deploy Models and their respective Analysis from a 
 .. _ML-IRIS-Analysis-Workflow-Regression.ipynb: ./examples/ML-IRIS-Analysis-Workflow-Regression.ipynb
 .. _ML-IRIS-Extract-Models-From-Cache.ipynb: ./examples/ML-IRIS-Extract-Models-From-Cache.ipynb
 .. _ML-IRIS-Import-and-Cache-Models-From-S3.ipynb: ./examples/ML-IRIS-Import-and-Cache-Models-From-S3.ipynb
-.. _ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Classifier.ipynb: ./examples/ML-Predict-IRIS-Classifier-From-Cache.ipnyb_
+.. _ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Classifier.ipynb: ./examples/ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Classifier.ipynb
 .. _ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Regressor.ipynb: ./examples/ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Regressor.ipynb
 
 
