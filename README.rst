@@ -807,13 +807,14 @@ Coming Soon and Known Issues
 
 #.  Testing on an older docker version
 
-    This was tested with ``1.12.0``
+    This was tested with ``1.12.1``
 
     ::
-        
+
         $ docker -v
-        Docker version 1.12.0, build 8eab29e
-        $
+        Docker version 1.12.1, build 23cf638
+        $ 
+
 
 #.  Setting up the Jupyter wait-for-it to ensure the stocks database is loaded before starting...not just the port is up
 
