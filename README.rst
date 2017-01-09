@@ -799,7 +799,7 @@ Coming Soon and Known Issues
 
 #.  Fixing the docker compose networking so the stocksdb container does not need to know the compose-generated docker network.
 
-    Right now it is defing the `sci-pype_datapype`_ as the expected docker network. This may not work on older versions of docker.
+    Right now it is defining the `sci-pype_datapype`_ as the expected docker network. This may not work on older versions of docker.
     
     .. _sci-pype_datapype: https://github.com/jay-johnson/sci-pype/blob/master/test/db.env#L1
 
