@@ -16,7 +16,7 @@ export ENV_PRESTART_SCRIPT="/opt/containerfiles/pre-start-notebook.sh"
 export ENV_START_SCRIPT="/opt/containerfiles/start-notebook.sh"
 export ENV_POSTSTART_SCRIPT="/opt/containerfiles/post-start-notebook.sh"
 
-export ENV_DEPLOYMENT_TYPE="Local"
+export ENV_DEPLOYMENT_TYPE="JustRedis"
 export ENV_REDIS_HOST="localhost"
 export ENV_REDIS_PORT="6000"
 export ENV_REDIS_SRC_KEY="JUPYTER_SRC_KEY"
@@ -58,8 +58,8 @@ export PATH_TO_JUPYTER=/opt/conda/envs/python2/bin/ipython
 export PYSPARK_DRIVER_PYTHON=/opt/conda/envs/python2/bin/ipython
 export PYSPARK_DRIVER_PYTHON_OPTS="notebook --NotebookApp.open_browser=False --NotebookApp.ip='*' --NotebookApp.port=8880"
 export ENV_THIRD_PARTY_SOURCE_DIR=/opt/work/src/thirdparty
-export ENV_AWS_KEY=AWS_KEY
-export ENV_AWS_SECRET=AWS_SECRET
+export ENV_AWS_KEY=$AWS_ACCESS_KEY_ID           # from user's ~/.bashrc
+export ENV_AWS_SECRET=$AWS_SECRET_ACCESS_KEY    # from user's ~/.bashrc
 
 export ENV_SCP_VENV_BASE_DIR="/opt/venv"
 export ENV_SCP_VENV_NAME="scipype"

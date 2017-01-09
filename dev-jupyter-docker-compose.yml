@@ -1,0 +1,35 @@
+version: '2'
+
+services:
+
+  jupyter:
+    image: jayjohnson/jupyter:2.0.0
+    container_name: "jupyter"
+    hostname: "jupyter"
+    env_file: 
+      - ./justredis/jupyter.env
+    ports:
+      - "82:8888"
+    volumes:
+      - /opt/project:/opt/project
+      - /opt/work:/opt/work
+    network_mode: "host"
+
+  redis-server:
+    image: jayjohnson/redis-single-node:1.0.0
+    container_name: "redis-server"
+    hostname: "redis-server"
+    entrypoint: /wait-for-its/dev-redis-wait-for-it.sh
+    env_file: 
+      - ./test/redis.env
+    ports:
+      - "6000:6000"
+    networks:
+      - datapype
+    volumes:
+      - ./wait-for-its:/wait-for-its
+
+networks:
+  datapype:
+    driver: bridge
+

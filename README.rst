@@ -1,31 +1,127 @@
-===================================
-Sci-Pype - Jupyter + Redis + Docker
-===================================
+=======================================================================
+Sci-Pype - A Machine Learning Framework for Sharing Models and Analysis
+=======================================================================
 
-Building Scientific Data Pipelines for Jupyter in Docker
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Sci-Pype is a framework for analyzing datasets using Python 2.7 and extended from the `Jupyter Scipy-Notebook`_ and a supported command line version. It was built to make data analysis easier by providing an API to build, train, test, predict, validate, analyze, extract, archive, and import Models and Analysis datasets with: S3 and redis (Kafka coming soon). After building and training the requested Models with a dataset, they are cached in redis along with their respective Analysis. After they are cached, they can be extracted and shared using S3. From S3, the Models can be imported back into redis for making new predictions using the same API. 
 
-.. figure:: https://jaypjohnson.com/_images/image_2016-08-01_building-a-data-science-pipeline.png
+.. figure:: ./examples/images/v2/Scipype-Seaborn-Visuals.png
+    :alt: Sci-Pype - A Machine Learning Framework for Sharing Models and Analysis
+    :align: center
+    
+    Analyzing the IRIS dataset with Sci-Pype
 
-Sci-Pype is a framework for building data pipelines. It uses a specialized Jupyter docker container extended from the original https://github.com/jupyter/docker-stacks that already support Python 2, Python 3, R, and Julia notebooks. I use sci-pype for machine learning, data analysis, data-sharing, model refinement, and stock analysis projects. It contains a python 2 core for making it easier to integrate with external databases and redis servers, debugging with slack, and colorized notebook logging.
+Common use cases for this framework are sharing Analysis notebooks and then automating new predictions with email delivery using AWS SES. With this native caching + deployment layer, you can build, train and use the supported Machine Learning Algorithms and Models across multiple environments (including multi-tenant ones). Once trained, you can extract the Models as a compressed, serialized ``Model file`` (like a build artifact) that is uploaded to S3. Importing a ``Model file`` decompresses the file and stores the Pickle-serialized Models + Analysis objects in redis. In production, it might be useful to house larger Models in something like a `load-balanced redis cluster`_ for sharing and making new predictions across a team or by automation.
 
-This core was originally built to datamine news releases in near-real time. Now I use it for analyzing, exchanging and sharing data with Jupyter. With this core, I build machine learning models that are published and persisted as JSON or serialized objects using pickle. These models are deployed and tested with a `load-balanced redis cluster`_. 
+A Machine Learning API with native redis caching and export + import using S3. Analyze entire datasets using an API for building, training, testing, analyzing, extracting, importing, and archiving. This repository can run from a docker container or from the repository. 
 
 Please note this is a `large docker container`_ so it may take some time to download and it extracts to ~6.8 GB on disk.
 
+.. _Jupyter Scipy-Notebook: https://github.com/jupyter/docker-stacks/tree/master/scipy-notebook
 .. _load-balanced redis cluster: https://github.com/jay-johnson/docker-redis-haproxy-cluster
 .. _large docker container: https://hub.docker.com/r/jayjohnson/jupyter/tags/
+
+Notebook Examples
+=================
+
+Please refer to the `examples directory`_ for the latest notebooks. Most of the notebooks and command line tools require running with a redis server listing on port 6000 (``<repo base dir>/dev-start.sh`` will start one). 
+
+.. _examples directory: https://github.com/jay-johnson/sci-pype/tree/master/examples
+
+#.  `ML-IRIS-Analysis-Workflow-Classification.ipynb`_
+
+    Build a unique Machine Learning Classifier (parameterized XGB by default) for each column in the IRIS dataset. After training and testing the Models, perform a general analysis on each column and save + display images generated during each step. After running, the Models + Analysis are Pickled into a set of objects stored in a set of unique redis cache keys. These leaf nodes are organized into a set of redis keys contained in the ``manifest`` node for retrieval as needed in the future (like a tree of Machine Learning Algorithm Models with their associated pre-computed Analysis in memory).
+
+#.  `ML-IRIS-Analysis-Workflow-Regression.ipynb`_
+    
+    Build a unique Machine Learning Regressor (parameterized XGB by default) for each column in the IRIS dataset. After training and testing the Models, perform a general analysis on each column and save + display images generated during each step. After running, the Models + Analysis are Pickled into a set of objects stored in a set of unique redis cache keys. These leaf nodes are organized into a set of redis keys contained in the ``manifest`` node for retrieval as needed in the future (like a tree of Machine Learning Algorithm Models with their associated pre-computed Analysis in memory).
+
+#.  `ML-IRIS-Extract-Models-From-Cache.ipynb`_
+
+    Extract all Models and Analysis records from redis and compile a large Pickle-serialized dictionary. Create a ``manifest`` for decoupling Model + Analysis nodes and compress the dictionary object (using zlib) and write it to disk as a ``Model file`` (``*.cache.pickle.zlib``). After creating the file on disk, upload it to the configured S3 Bucket and Key.
+    
+    Once uploaded to the S3 Bucket you should be able to view, download and share the ``Model files``:
+
+    .. figure:: ./examples/images/scipype_s3_bucket_with_xgb_classifier_and_regressor_models_as_pickled_object_files.png
+
+        S3 Bucket containing the IRIS ``Model Files``
+
+#.  `ML-IRIS-Import-and-Cache-Models-From-S3.ipynb`_
+
+    Download the S3 IRIS ``Model file`` from the configured S3 Bucket + Key and decompress the previously-built Analysis and Models using Pickle to store them all in the redis cache according to the ``manifest``. This includes examples from the IRIS sample dataset and requires you to have a valid S3 Bucket storing the Models and are comfortable paying for the download costs to retrieve the ``Model file`` from S3 (https://aws.amazon.com/s3/pricing/).
+
+#.  `ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Classifier.ipynb`_
+
+    This notebook shows how to make new predictions with cached IRIS Classifier Models + Analysis housed in redis. 
+    
+#.  `ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Regressor.ipynb`_
+
+    This notebook shows how to make new predictions with cached IRIS Regressor Models + Analysis housed in redis. 
+    
+
+Command Line Examples
+=====================
+
+Most of the notebooks and command line tools require running with a redis server listing on port 6000 (``<repo base dir>/dev-start.sh`` will start one). The command line versions that do not require docker or Jupyter can be found:
+
+::
+    
+    <repo base dir>
+    ├── bins
+    │   ├── demo-running-locally.py - Simple validate env is working test
+    │   ├── ml
+    │   │   ├── builders - Build and Train Models then Analyze Predictions without display any plotted images (automation examples)
+    │   │   │   ├── build-classifier-iris.py
+    │   │   │   └── build-regressor-iris.py
+    │   │   ├── demo-ml-classifier-iris.py - Command line version of: ML-IRIS-Analysis-Workflow-Classification.ipynb
+    │   │   ├── demo-ml-regressor-iris.py - Command line version of: ML-IRIS-Analysis-Workflow-Regression.ipynb
+    │   │   ├── downloaders
+    │   │   │   └── download_iris.py - Command line tool for downloading + preparing the IRIS dataset
+    │   │   ├── extractors
+    │   │   │   ├── extract_and_upload_iris_classifier.py - Command line version of: ML-IRIS-Extract-Models-From-Cache.ipynb (Classifier)
+    │   │   │   └── extract_and_upload_iris_regressor.py - Command line version of: ML-IRIS-Extract-Models-From-Cache.ipynb (Regressor)
+    │   │   ├── importers
+    │   │   │   ├── import_iris_classifier.py - ML-IRIS-Import-and-Cache-Models-From-S3.ipynb (Classifier)
+    │   │   │   └── import_iris_regressor.py - ML-IRIS-Import-and-Cache-Models-From-S3.ipynb (Regressor)
+    │   │   └── predictors
+    │   │       ├── predict-from-cache-iris-classifier.py - ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Classifier.ipynb (Classifier)
+    │   │       └── predict-from-cache-iris-regressor.py - ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Regressor.ipynb (Regressor)
+
+
+
+Now you can share, test, and deploy Models  and their respective Analysis from a file in S3 for other Sci-pype users running on different environments.
+
+.. _ML-IRIS-Analysis-Workflow-Classification.ipynb: ./examples/ML-IRIS-Analysis-Workflow-Classification.ipynb
+.. _ML-IRIS-Analysis-Workflow-Regression.ipynb: ./examples/ML-IRIS-Analysis-Workflow-Regression.ipynb
+.. _ML-IRIS-Extract-Models-From-Cache.ipynb: ./examples/ML-IRIS-Extract-Models-From-Cache.ipynb
+.. _ML-IRIS-Import-and-Cache-Models-From-S3.ipynb: ./examples/ML-IRIS-Import-and-Cache-Models-From-S3.ipynb
+.. _ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Classifier.ipynb: ./examples/ML-Predict-IRIS-Classifier-From-Cache.ipnyb_
+.. _ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Regressor.ipynb: ./examples/ML-IRIS-Predict-From-Cache-for-New-Predictions-and-Analysis-Regressor.ipynb
+
 
 Overview
 ========
 
-The docker container runs a Jupyter web application. The web application runs `Jupyter Notebooks`_ as kernels that can be implemented in Python 2, 3, R, or Julia. For now the examples and core included in this repository will only work with Python 2.
+The docker container runs a Jupyter web application. The web application runs `Jupyter Notebooks`_ as kernels. For now the examples and core included in this repository will only work with Python 2.
 
 .. _Jupyter Notebooks: http://jupyter-notebook.readthedocs.io/en/latest/
 
-This container can run in three modes:
+This container can run in four modes:
 
-#.  Local development
+#.  Default development
+
+    This mode will mount your changes from the repository into the container at runtime for local testing.
+
+    To start the local development version run: dev-start.sh_
+
+    ::
+
+        ./dev-start.sh
+
+    You can login to the container with: ``./ssh.sh``
+    
+    .. _dev-start.sh: https://github.com/jay-johnson/sci-pype/blob/s3_and_machine_learning_api/dev-start.sh
+
+#.  Docker Run Single Container
 
     To start the local development version run: start.sh_
 
@@ -69,13 +165,136 @@ This container can run in three modes:
     .. _compose-start-jupyter.sh: https://github.com/jay-johnson/sci-pype/blob/master/compose-start-jupyter.sh
     .. _jupyter-docker-compose.yml: https://github.com/jay-johnson/sci-pype/blob/master/jupyter-docker-compose.yml
 
+Running Locally without Docker
+==============================
 
-Working Examples
-================
+Here is how to setup Sci-pype to run locally without using docker (and Lambda deployments in the future).
 
-This document details the following examples. Please refer to the `examples directory`_ for the latest. 
+#.  Clone the repo without the dash character in the name
 
-.. _examples directory: https://github.com/jay-johnson/sci-pype/tree/master/examples
+    ::
+
+        $ git clone git@github.com:jay-johnson/sci-pype.git scipype
+
+#.  Go to the base dir of the repository
+
+    ::
+
+        dev$ cd scipype
+
+#.  Set up a local virtual environment using the installer
+
+    This will take some time and may fail due to missing packages on your host. Please refer to the `Coming Soon and Known Issues`_ section for help getting passed these issues.
+
+    ::
+    
+        scipype$ ./setup-new-dev.sh
+
+    After this finishes you should see the lines:
+
+    ::
+
+        ---------------------------------------------------------
+        Activate the new Scipype virtualenv with:
+        
+        source ./dev-properties.sh"
+           or:
+        source ./properties.sh
+
+#.  Activate the ``scipype`` virtual environment for development:
+
+    ::
+
+        $ source ./dev-properties.sh
+
+#.  Confirm your virtual environment is ready for use
+
+    ::
+
+        (scipype) scipype$ pip list --format=columns | grep -E -i "tensorflow|pandas|redis|kafka|xgboost|scipy|scikit"
+        confluent-kafka                    0.9.2                                                 
+        kafka-python                       1.3.1                                                 
+        pandas                             0.19.2                                                
+        pandas-datareader                  0.2.2                                                 
+        pandas-ml                          0.4.0                                                 
+        redis                              2.10.5                                                
+        scikit-image                       0.12.3                                                
+        scikit-learn                       0.18.1                                                
+        scikit-neuralnetwork               0.7                                                   
+        scipy                              0.18.1                                                
+        tensorflow                         0.12.0                                                
+        xgboost                            0.6a2                                                 
+        (scipype) scipype$ 
+
+#.  If you want to always use this virtual environment add this to your ``~/.bashrc``
+
+    ::
+
+        echo 'source /tmp/scipype/bin/activate' >> ~/.bashrc
+
+#.  Update your user's ``PYTHONPATH``
+
+    The ``setup-new-dev.sh`` script will create a symlink that emulates the docker container's volume struture.
+
+    ::
+
+        scipype$ ls -l /opt/ | grep work
+        lrwxrwxrwx  1 driver driver   32 Jan  2 15:56 work -> /home/driver/dev/scipype
+        scipype$ 
+
+    To run the Python 2 source code without being inside the docker container, you will need to add these lines to your ``~/.bashrc`` to automatically setup the Python 2 pathing to find the repository's ``src`` directory just like the docker container.
+
+    ::
+
+        if [[ "${PYTHONPATH}" == "" ]]; then
+            export PYTHONPATH=/opt/work
+        else
+            export PYTHONPATH=${PYTHONPATH}:/opt/work
+        fi
+
+
+#.  Confirm the Demo downloader works in the Virtual Environment
+
+    Please note: this assumes running from a new terminal to validate the virtual environment activation
+
+    Activate it
+
+    ::
+
+        scipype$ source ./properties.sh
+
+    Run the Demo
+
+    ::
+
+        (scipype) scipype$ ./bins/demo-running-locally.py 
+        Downloading(SPY) Dates[Jan, 02 2016 - Jan, 02 2017]
+        Storing CSV File(/opt/scipype/data/src/spy.csv)
+        Done Downloading CSV for Ticker(SPY)
+        Success File exists: /opt/scipype/data/src/spy.csv
+
+    Deactivate it
+
+    ::
+
+        (scipype) scipype$ deactivate 
+        scipype$ 
+
+
+#.  If you want to automatically load the full Scipype environment ``properties.sh`` for any new shell terminal add this to your user's ``~/.bashrc``
+
+    ::
+
+        echo 'source /opt/work/properties.sh' >> ~/.bashrc
+
+
+.. _Coming Soon and Known Issues: https://github.com/jay-johnson/sci-pype/blob/master/README.rst#coming-soon-and-known-issues
+
+Previous Examples
+=================
+
+Version 1 Examples:
+-------------------
 
 #.  `example-core-demo.ipynb`_ 
 
@@ -174,7 +393,7 @@ Components
 
 #.  Local Redis Server
 
-    When starting the container with ``ENV_DEPLOYMENT_TYPE`` set to anything not ``JustDB``, the container will start a local redis server inside the container on port ``6000`` for iterating on your pipeline analysis, model deployment and caching strategies.
+    When starting the container with ``ENV_DEPLOYMENT_TYPE`` set to anything not ``JustDB``, the container will start a local redis server inside the container on port ``6000`` for iterating on your pipeline analysis, Model deployment and caching strategies.
 
 #.  Loading Database and Redis Applications
 
@@ -369,10 +588,10 @@ The full-stack-compose.yml_ patches the Jupyter and redis containers to ensure t
 
         $ ./ssh.sh 
         SSH-ing into Docker image(jupyter)
-        driver:/opt/work$ ps auwwx | grep jupyter
-        driver       1  0.0  0.0  13244  2908 ?        Ss   17:00   0:00 bash /wait-for-its/jupyter-wait-for-it.sh
-        driver      38  0.3  1.2 180564 48068 ?        S    17:00   0:00 /opt/conda/bin/python /opt/conda/bin/jupyter-notebook
-        driver:/opt/work$ exit
+        jovyan:/opt/work$ ps auwwx | grep jupyter
+        jovyan       1  0.0  0.0  13244  2908 ?        Ss   17:00   0:00 bash /wait-for-its/jupyter-wait-for-it.sh
+        jovyan      38  0.3  1.2 180564 48068 ?        S    17:00   0:00 /opt/conda/bin/python /opt/conda/bin/jupyter-notebook
+        jovyan:/opt/work$ exit
 
 #.  Run the Database Extraction Jupyter Demo
 
@@ -506,6 +725,100 @@ From inside the container here is where the directories are mapped:
 Coming Soon and Known Issues
 ============================
 
+#.  Missing xattr.h
+    
+    If you see this error:
+
+    ::
+
+        xattr.c:29:24: fatal error: attr/xattr.h: No such file or directory
+
+    Install RPM:
+
+    ::
+        
+        sudo yum install -y libattr-devel
+
+    Install Deb:
+
+    ::
+
+        sudo apt-get install -y libattr1-dev
+
+    Retry the install
+
+#.  Local Install Confluent:
+
+    If you're trying to setup the local development environment and missing the kafka headers:
+
+    ::
+
+        In file included from confluent_kafka/src/confluent_kafka.c:17:0:
+        confluent_kafka/src/confluent_kafka.h:21:32: fatal error: librdkafka/rdkafka.h: No such file or directory
+        #include <librdkafka/rdkafka.h>
+
+    Please install Kafka by adding their repository and then installing: 
+    
+    ::
+    
+        $ sudo yum install confluent-platform-oss-2.11
+        $ sudo yum install librdkafka1 librdkafka-devel
+
+    Official RPM Guide: http://docs.confluent.io/3.1.1/installation.html#rpm-packages-via-yum
+
+    Official DEB Guide: http://docs.confluent.io/3.1.1/installation.html#deb-packages-via-apt
+
+    For ``Fedora 24/RHEL 7/CentOS 7`` users here's a tool to help:
+    
+    ::
+        
+        scipype/python2$ sudo ./install_confluent_platform.sh
+
+#.  Install PyQt4 for ``ImportError: No module named PyQt4`` errors:
+
+	::
+
+		(python2) jovyan:/opt/work/bins$ conda install -y pyqt=4.11
+		Fetching package metadata .........
+		Solving package specifications: ..........
+
+		Package plan for installation in environment /opt/conda/envs/python2:
+
+		The following packages will be downloaded:
+
+			package                    |            build
+			---------------------------|-----------------
+			qt-4.8.7                   |                3        31.3 MB  conda-forge
+			pyqt-4.11.4                |           py27_2         3.5 MB  conda-forge
+			------------------------------------------------------------
+												Total:        34.8 MB
+
+		The following NEW packages will be INSTALLED:
+
+			pyqt: 4.11.4-py27_2 conda-forge
+			qt:   4.8.7-3       conda-forge (copy)
+
+		Pruning fetched packages from the cache ...
+		Fetching packages ...
+		qt-4.8.7-3.tar 100% |##########################################################################################################################################| Time: 0:00:06   5.23 MB/s
+		pyqt-4.11.4-py 100% |##########################################################################################################################################| Time: 0:00:02   1.28 MB/s
+		Extracting packages ...
+		[      COMPLETE      ]|#############################################################################################################################################################| 100%
+		Linking packages ...
+		[      COMPLETE      ]|#############################################################################################################################################################| 100%
+
+
+	Now try running a script from the shell:
+
+	::
+
+		(python2) jovyan:/opt/work/bins$ ./download-spy-csv.py 
+		Downloading(SPY) Dates[Jan, 02 2016 - Jan, 02 2017]
+		Storing CSV File(/opt/work/data/src/spy.csv)
+		Done Downloading CSV for Ticker(SPY)
+		Success File exists: /opt/work/data/src/spy.csv
+		(python2) jovyan:/opt/work/bins$ 
+
 #.  How to build a customized Python Core mounted from outside the Jupyter container
 
 #.  Fixing the docker compose networking so the stocksdb container does not need to know the compose-generated docker network.
@@ -530,13 +843,38 @@ Coming Soon and Known Issues
 
     For now just shutdown the notebook kernel if you see an error related to the stocks database not being there when running the full stack.
 
+Coming Soon
+===========
+
+-   Examples for using the Timestamp Forecasting API
+
+-   Post Processing Event API support
+
+-   Confluent Kafka integration notebooks (the python client is already installed in the virtual env and docker container https://github.com/confluentinc/confluent-kafka-python)
+
+-   PySpark integration notebooks
+
+-   Tensorflow integration notebooks
+
+-   Adding more support and optional third-party mounting for customized Machine Learning Algorithms (like https://github.com/pandas-ml/pandas-ml)
+
+-   Odo (http://odo.readthedocs.io/en/latest/) examples 
+
+-   Lambda deployment integration (http://docs.aws.amazon.com/lambda/latest/dg/lambda-python-how-to-create-deployment-package.html) and likely FPM (https://github.com/jordansissel/fpm) for package building.
+
 License
 =======
 
-This repo is MIT
+This project is not related to SciPy.org or the scipy library. It was originally built for exchanging and loading datasets using Redis for creating near-realtime data pipelines for streaming analysis (like a scientific pypeline).
+
+This repo is Apache 2.0 License: https://github.com/jay-johnson/sci-pype/blob/master/LICENSE
 
 Jupyter - BSD: https://github.com/jupyter/jupyter/blob/master/LICENSE
 
+Please refer to the Conda Licenses for individual Python libraries: https://docs.continuum.io/anaconda/pkg-docs
 
+Redis - https://redis.io/topics/license
+
+zlib - https://opensource.org/licenses/zlib-license.php
 
 

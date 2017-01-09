@@ -1,5 +1,10 @@
-import syslog
-import os
+# Support running on Windows terminals
+try:
+    import syslog
+    import os
+except Exception,b:
+    import os
+
 import sys
 import logging
 import logging.handlers

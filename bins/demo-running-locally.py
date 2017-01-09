@@ -2,6 +2,10 @@
 
 # Load common imports and system envs to build the core object
 import sys, os
+
+os.environ["ENV_SYSLOG_ENABLED"]    = "1"
+os.environ["ENV_DEPLOYMENT_TYPE"]   = "JustRedis"
+
 from src.common.inits_for_python import *
 
 ticker          = "SPY"
