@@ -6223,6 +6223,7 @@ class PyCore:
 
                 grid.fig.get_children()[-1].set_bbox_to_anchor((1.1, 0.5, 0, 0))
                 self.pd_add_footnote(grid.fig)
+                save_filename       = image_filename
 
                 if max_plots == 1:
                     save_filename   = image_filename
