@@ -1,0 +1,21 @@
+version: '2'
+
+services:
+
+  jupyter:
+    image: jayjohnson/jupyter:2.0.0
+    container_name: "jupyter"
+    hostname: "jupyter"
+    env_file: 
+      - ./justredis/redis-labs.env
+    ports:
+      - "82:8888"
+    volumes:
+      - /opt/project:/opt/project
+      - /opt/work:/opt/work
+    network_mode: "host"
+
+networks:
+  datapype:
+    driver: bridge
+
