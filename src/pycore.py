@@ -1638,7 +1638,7 @@ class PyCore:
     def s3_create_id(self, dataset_name, date_str, debug=False):
         id_name = "DS_" + str(dataset_name) + "_" + str(date_str) + "_" + str(self.build_unique_key())
         return id_name
-    # end of s3_create_s3_id
+    # end of s3_create_id
 
 
     def s3_create_new_bucket(self, bucketname, bucket_location="sa-east-1", debug=False):
