@@ -131,34 +131,6 @@ ENV ENV_DEPLOYMENT_TYPE Local
 
 USER root
 
-# Add Volumes and Set permissions
-RUN mkdir -p -m 777 /opt \
-    && mkdir -p -m 777 /opt/containerfiles \
-    && chmod 777 /opt \
-    && chmod 777 /opt/containerfiles \
-    && touch /tmp/firsttimerunning
-
-# Add the starters and installers:
-ADD ./containerfiles/ /opt/containerfiles/
-
-RUN chmod 777 /opt/containerfiles/*.sh \
-    && cp /opt/containerfiles/bashrc ~/.bashrc \
-    && cp /opt/containerfiles/vimrc  ~/.vimrc \
-    && cp /opt/containerfiles/bashrc /home/$NB_USER/.bashrc \
-    && cp /opt/containerfiles/vimrc  /home/$NB_USER/.vimrc \
-    && chown $NB_USER /home/$NB_USER/.bashrc \
-    && chown $NB_USER /home/$NB_USER/.vimrc \
-    && chmod 664 /home/$NB_USER/.bashrc \
-    && chmod 664 /home/$NB_USER/.vimrc 
-
-# Add local files as late as possible to avoid cache busting
-RUN cp /opt/containerfiles/start-notebook.sh /usr/local/bin/ \
-    && cp /opt/containerfiles/start-singleuser.sh /usr/local/bin/ \
-    && cp /opt/containerfiles/jupyter_notebook_config.py /home/$NB_USER/.jupyter/
-
-#####################################
-# Start of derived notebook
-
 # Python packages for interfacing with resources outside of this container
 RUN conda install --quiet --yes \
     'coverage' \
@@ -194,22 +166,12 @@ RUN conda install --quiet --yes \
     'alembic' \
     'pyqt=4.11'
 
-RUN echo 'export PATH=$PATH:/opt/conda/envs/python2/bin:/opt/conda/bin:/opt/work/bins' >> /home/$NB_USER/.bashrc \
-    && echo '' >> /home/$NB_USER/.bashrc \
-    && echo 'if [[ "${PYTHONPATH}" == "" ]]; then' >> /home/$NB_USER/.bashrc \
-    && echo '   export PYTHONPATH=/opt/work' >> /home/$NB_USER/.bashrc \
-    && echo 'else' >> /home/$NB_USER/.bashrc \
-    && echo '   export PYTHONPATH=$PYTHONPATH:/opt/work' >> /home/$NB_USER/.bashrc \
-    && echo 'fi' >> /home/$NB_USER/.bashrc \
-    && echo '' >> /home/$NB_USER/.bashrc \
-    && echo 'source activate python2' >> /home/$NB_USER/.bashrc \
-    && echo '' >> /home/$NB_USER/.bashrc
-
-USER root
-
-RUN mkdir -p -m 777 /opt/python2 \
+# Add Volumes and Set permissions
+RUN mkdir -p -m 777 /opt \
+    && mkdir -p -m 777 /opt/containerfiles \
     && chmod 777 /opt \
-    && chown -R $NB_USER:users /opt/python2 
+    && chmod 777 /opt/containerfiles \
+    && touch /tmp/firsttimerunning
 
 ### Finish the setup using root
 USER $NB_USER
@@ -221,10 +183,29 @@ RUN /opt/python2/install_pips.sh
 
 USER root
 
+RUN conda install pyqt=4.11 -y
+
 # Configure container startup as root
 EXPOSE 8888
 #ENTRYPOINT ["tini", "--"]
 CMD ["/opt/containerfiles/start-container.sh"]
+
+#########################################################
+#
+# Add Files into the container now that the setup is done
+#
+# Add the starters and installers:
+ADD ./containerfiles/ /opt/containerfiles/
+
+RUN chmod 777 /opt/containerfiles/*.sh \
+    && cp /opt/containerfiles/bashrc ~/.bashrc \
+    && cp /opt/containerfiles/vimrc  ~/.vimrc \
+    && cp /opt/containerfiles/bashrc /home/$NB_USER/.bashrc \
+    && cp /opt/containerfiles/vimrc  /home/$NB_USER/.vimrc \
+    && chown $NB_USER /home/$NB_USER/.bashrc \
+    && chown $NB_USER /home/$NB_USER/.vimrc \
+    && chmod 664 /home/$NB_USER/.bashrc \
+    && chmod 664 /home/$NB_USER/.vimrc 
 
 RUN echo 'export PATH=$PATH:/opt/conda/envs/python2/bin:/opt/conda/bin:/opt/work/bins' >> /root/.bashrc \
     && echo '' >> /home/$NB_USER/.bashrc \
@@ -239,12 +220,25 @@ RUN echo 'export PATH=$PATH:/opt/conda/envs/python2/bin:/opt/conda/bin:/opt/work
     && mv /usr/bin/vi /usr/bin/bak.vi \
     && cp /usr/bin/vim /usr/bin/vi
 
+RUN echo 'export PATH=$PATH:/opt/conda/envs/python2/bin:/opt/conda/bin:/opt/work/bins' >> /home/$NB_USER/.bashrc \
+    && echo '' >> /home/$NB_USER/.bashrc \
+    && echo 'if [[ "${PYTHONPATH}" == "" ]]; then' >> /home/$NB_USER/.bashrc \
+    && echo '   export PYTHONPATH=/opt/work' >> /home/$NB_USER/.bashrc \
+    && echo 'else' >> /home/$NB_USER/.bashrc \
+    && echo '   export PYTHONPATH=$PYTHONPATH:/opt/work' >> /home/$NB_USER/.bashrc \
+    && echo 'fi' >> /home/$NB_USER/.bashrc \
+    && echo '' >> /home/$NB_USER/.bashrc \
+    && echo 'source activate python2' >> /home/$NB_USER/.bashrc \
+    && echo '' >> /home/$NB_USER/.bashrc
 
-#########################################################
-#
-# Add Files into the container now that the setup is done
-#
-RUN mkdir -p -m 777 /opt/work/ \
+# Add local files as late as possible to avoid cache busting
+RUN cp /opt/containerfiles/start-notebook.sh /usr/local/bin/ \
+    && cp /opt/containerfiles/start-singleuser.sh /usr/local/bin/ \
+    && cp /opt/containerfiles/jupyter_notebook_config.py /home/$NB_USER/.jupyter/ \
+    && mkdir -p -m 777 /opt/python2 \
+    && chmod 777 /opt \
+    && chown -R $NB_USER:users /opt/python2 \
+    && mkdir -p -m 777 /opt/work/ \
     && chmod 777 /opt \
     && chmod 777 /opt/work \
     && chown -R $NB_USER:users /opt/work \
@@ -262,8 +256,6 @@ RUN mkdir -p -m 777 /opt/work/ \
     && chown -R $NB_USER:users /opt/work/configs \
     && chown -R $NB_USER:users /opt/work/pips \
     && chown -R $NB_USER:users /opt/work/data 
-
-RUN conda install pyqt=4.11 -y
 
 WORKDIR /opt/work
 

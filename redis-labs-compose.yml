@@ -15,7 +15,3 @@ services:
       - /opt/work:/opt/work
     network_mode: "host"
 
-networks:
-  datapype:
-    driver: bridge
-
