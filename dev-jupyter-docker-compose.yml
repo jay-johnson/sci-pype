@@ -13,6 +13,8 @@ services:
     volumes:
       - /opt/project:/opt/project
       - /opt/work:/opt/work
+      - ./configs:/opt/work/configs
+      - ./examples:/opt/work/examples
     network_mode: "host"
 
   redis-server:

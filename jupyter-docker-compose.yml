@@ -11,6 +11,8 @@ services:
     ports:
       - "82:8888"
     volumes:
+      - ./configs:/opt/work/configs
+      - ./examples:/opt/work/examples
       - /opt/project:/opt/project
       - /opt/work/data/src:/opt/work/data/src
       - /opt/work/data/dst:/opt/work/data/dst
