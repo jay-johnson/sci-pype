@@ -23,8 +23,13 @@ if [ $UID == 0 ] ; then
     exec su $NB_USER -c "env PATH=$PATH jupyter notebook $*" &>> $log
 else
     # Otherwise just exec the notebook
-    echo "$(date +'%m-%d-%y %H:%M:%S') exec jupyter notebook $*" >> $log
-    exec jupyter notebook $* &>> $log
+    if [[ "${ENV_JUPYTER_PASSWORD}" == "" ]]; then
+        echo "$(date +'%m-%d-%y %H:%M:%S') exec jupyter notebook --NotebookApp.token='' $*" >> $log
+        exec jupyter notebook --NotebookApp.token='' $* &>> $log
+    else
+        echo "$(date +'%m-%d-%y %H:%M:%S') exec jupyter notebook $*" >> $log
+        exec jupyter notebook $* &>> $log
+    fi
 fi
 
 echo "$(date +'%m-%d-%y %H:%M:%S') Done Starting Notebook" >> $log

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-filetouse="dev-jupyter-docker-compose.yml"
+filetouse="redis-labs-compose.yml"
 
 echo "Stopping Composition: $filetouse"
 docker-compose -f $filetouse stop

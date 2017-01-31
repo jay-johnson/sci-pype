@@ -9,6 +9,10 @@ export ENV_DATA_DIR="/opt/work/data"
 export ENV_DATA_SRC_DIR="/opt/work/data/src"
 export ENV_DATA_DST_DIR="/opt/work/data/dst"
 export ENV_PLOT_FOOTNOTE="Your Footnote"
+export ENV_JUPYTER_PORT="8888"
+export ENV_JUPYTER_PEM_FILE="/opt/work/certs/jupyter.pem"
+export ENV_JUPYTER_THEME="grade3"
+export ENV_JUPYTER_THEME_ARGS=""
 
 # Allow running starters from outside the container
 export ENV_DATA_BIN_DIR="/opt/work/data/bin"
@@ -82,3 +86,4 @@ if [[ "${ENV_SCP_ACTIVATE_BY_DEFAULT}" == "1" ]]; then
         echo "Did not find Scipype VirtualEnv At Path(${ENV_SCP_VENV_ACTIVATE}). Please install it with: scipype$ ./setup-new-dev.sh"
     fi
 fi
+
