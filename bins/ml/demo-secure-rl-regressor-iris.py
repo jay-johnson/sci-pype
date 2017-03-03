@@ -26,7 +26,7 @@ if os.path.exists(env_file):
             splt_ar = line.split("=")
             if len(splt_ar) > 0:
                 key     = splt_ar[0]
-                value   = splt_ar[1]
+                value   = "=".join(splt_ar[1:])
                 os.environ[str(key)] = value
 
                 if debug:
