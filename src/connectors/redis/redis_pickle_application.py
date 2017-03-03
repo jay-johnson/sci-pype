@@ -26,10 +26,15 @@ class RedisPickleApplication(BaseRedisApplication):
     
     def connect(self):
         if self.m_debug:
-            self.lg("PubR Connecting to Redis(" + str(self.m_host_address) + ":" + str(self.m_port) + ") with Pickle queue(" + str(self.m_queue_name) + ")", 7)
-        self.m_rw = RedisWrapper(self.m_queue_name, serializer=pickle, host=self.m_host_address, port=int(self.m_port), db=0)
+            if self.m_redis_password:
+                self.lg("Connecting to Secure Redis(" + str(self.m_host_address) + ":" + str(self.m_port) + ") DB(" + str(self.m_db) + ") with Pickle queue(" + str(self.m_queue_name) + ")", 7)
+            else:
+                self.lg("Connecting to Unsecure Redis(" + str(self.m_host_address) + ":" + str(self.m_port) + ") DB(" + str(self.m_db) + ") with Pickle queue(" + str(self.m_queue_name) + ")", 7)
+        # end of debugging
+
+        self.m_rw = RedisWrapper(self.m_queue_name, serializer=pickle, host=self.m_host_address, port=int(self.m_port), db=int(self.m_db), password=self.m_redis_password)
         return None
-    # end of __derived_disconnect
+    # end of connect
 
 
     def get_address(self):

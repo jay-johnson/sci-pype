@@ -1,7 +1,6 @@
-import json, sys
+import json, sys, os
 
 sys.path.append("/opt/src")
-
 from connectors.redis.redis_wrapper import RedisWrapper
 
 class BaseRedisApplication:
@@ -14,6 +13,12 @@ class BaseRedisApplication:
         self.m_queue_name           = redis_queue
         self.m_log                  = logger
         self.m_debug                = debug
+
+        self.m_db                   = int(os.getenv("ENV_REDIS_DB_ID", 0))
+        self.m_redis_password       = os.getenv("ENV_REDIS_PASSWORD", "") # if set to empty string use password=None
+
+        if str(self.m_redis_password) == "":
+            self.m_redis_password   = None
 
         self.m_rw                   = None
         self.m_put_count            = 0

@@ -11,9 +11,15 @@ ${condapip} list --format=columns
 echo ""
 
 echo "Installing pyxattr manually due to the -O2/-03 issue that is still in the 0.5.5 conda build: https://github.com/iustin/pyxattr/issues/13"
-pushd /opt/python2
-git clone https://github.com/iustin/pyxattr.git pyxattr
-${condapip} install ./pyxattr
+mkdir -p -m 777 /tmp/python2
+pushd /tmp/python2
+git clone https://github.com/iustin/pyxattr.git /tmp/python2/pyxattr
+${condapip} install /tmp/python2/pyxattr
+last_status="$?"
+if [[ "${last_status}" != "0" ]]; then
+    echo "Failed to install Primary Python 2 requirement: pyxattr"
+    exit 1 
+fi
 popd
 
 echo "Installing Primary set of pips"

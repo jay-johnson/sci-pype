@@ -1,0 +1,14 @@
+version: '2'
+
+services:
+
+  redisml1:
+    image: jayjohnson/redis-haproxy-cluster-node:3.2.8
+    container_name: "redisml1"
+    hostname: "redisml1"
+    env_file:
+      - ./env/redis-no-auth-single.env
+    ports:
+      - "6400:6400"
+    network_mode: "host"
+

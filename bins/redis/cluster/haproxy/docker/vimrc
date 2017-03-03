@@ -1,0 +1,15 @@
+set pastetoggle=<F10>
+set autoindent " always set autoindenting on"
+set smartindent " use smart indent if there is no indent file"
+set tabstop=4 " <tab> inserts 4 spaces"
+set softtabstop=4 " <BS> over an autoindent deletes 4 spaces."
+set smarttab " Handle tabs more intelligently"
+set expandtab " Use spaces, not tabs, for autoindent/tab key."
+set shiftwidth=4 " an indent level is 4 spaces wide."
+set shiftround " rounds indent to a multiple of shiftwidth"
+set showmode
+
+augroup auto_comment
+    au!
+    au FileType * setlocal formatoptions-=c formatoptions-=r formatoptions-=o
+augroup END

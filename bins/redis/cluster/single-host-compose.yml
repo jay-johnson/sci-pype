@@ -1,0 +1,56 @@
+version: '2'
+
+services:
+
+  haproxy-redis:
+    image: jayjohnson/haproxy-redis:1.5.18
+    container_name: "haproxy-redis"
+    hostname: "haproxy-redis"
+    env_file:
+      - ./env/dev/haproxy.env
+    ports:
+      - "1936:1936"
+      - "6000:6000"
+    networks:
+      - redisclusternetwork
+
+  redisnode1:
+    image: jayjohnson/redis-haproxy-cluster-node:3.2.8
+    container_name: "redisnode1"
+    hostname: "redisnode1"
+    env_file:
+      - ./env/dev/redis-server-1.env
+    ports:
+      - "6001:6001"
+      - "16001:16001"
+    networks:
+      - redisclusternetwork
+  
+  redisnode2:
+    image: jayjohnson/redis-haproxy-cluster-node:3.2.8
+    container_name: "redisnode2"
+    hostname: "redisnode2"
+    env_file:
+      - ./env/dev/redis-server-2.env
+    ports:
+      - "6002:6002"
+      - "16002:16002"
+    networks:
+      - redisclusternetwork
+  
+  redisnode3:
+    image: jayjohnson/redis-haproxy-cluster-node:3.2.8
+    container_name: "redisnode3"
+    hostname: "redisnode3"
+    env_file:
+      - ./env/dev/redis-server-3.env
+    ports:
+      - "6003:6003"
+      - "16003:16003"
+    networks:
+      - redisclusternetwork
+
+networks:
+  redisclusternetwork:
+    driver: bridge
+

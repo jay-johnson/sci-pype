@@ -4,6 +4,7 @@ maintainer="jayjohnson"
 basename="jupyter/scipy-notebook"
 imagename="jupyter"
 
+export ENV_VERSION_TAG="${version}"
 export ENV_PROJ_DIR="/opt/project"
 export ENV_DATA_DIR="/opt/work/data"
 export ENV_DATA_SRC_DIR="/opt/work/data/src"

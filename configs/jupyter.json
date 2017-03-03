@@ -10,6 +10,10 @@
                 "Redis"     : "/opt/work/configs/local-redis.json",
                 "Database"  : "/opt/work/configs/empty-db.json"
             },
+            "JustRedisSecure" : {
+                "Redis"     : "/opt/work/configs/local-secure-redis.json",
+                "Database"  : "/opt/work/configs/empty-db.json"
+            },
             "JustDB" : {
                 "Redis"     : "/opt/work/configs/empty-redis.json",
                 "Database"  : "/opt/work/configs/db.json"
@@ -18,8 +22,16 @@
                 "Redis"     : "/opt/work/configs/cloud-redis.json",
                 "Database"  : "/opt/work/configs/empty-db.json"
             },
+            "RedisLabsSecure" : {
+                "Redis"     : "/opt/work/configs/cloud-redis-secure.json",
+                "Database"  : "/opt/work/configs/empty-db.json"
+            },
             "Local" : {
                 "Redis"     : "/opt/work/configs/local-redis.json",
+                "Database"  : "/opt/work/configs/db.json"
+            },
+            "LocalSecure" : {
+                "Redis"     : "/opt/work/configs/local-secure-redis.json",
                 "Database"  : "/opt/work/configs/db.json"
             },
             "Test"  : {
