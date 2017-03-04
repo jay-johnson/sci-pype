@@ -6,7 +6,7 @@ import sys, os, json
 def load_env_for_specific_runtime():
 
     # In case this is not inside docker, load all env vars from the file into the runtime:
-    if os.getenv("ENV_IN_DOCKER", "0") == "0": # Set this to anything not "0" and it by pass this
+    if os.getenv("ENV_IN_DOCKER", "0") == "0": # Set this to anything not "0" to bypass
 
         use_env         = os.getenv("ENV_DEPLOYMENT_TYPE", "Local")
         path_to_envs    = os.getenv("ENV_CL_ENV_DIR", "/opt/work/env") + "/"
@@ -47,7 +47,7 @@ def load_env_for_specific_runtime():
 
             if use_env in env_for_deploy:
                 
-                target_env_file     = str(env_for_deploy[use_env])
+                target_env_file     = str(env_for_deploy[use_env]["Name"])
                 org_paths_to_test   = [
                                         "../../../env/",
                                         "../../env/",

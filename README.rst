@@ -301,14 +301,6 @@ You can run without a password by either not defining the ``ENV_REDIS_PASSWORD``
 Using a Password-locked Redis Labs Cloud endpoint
 -------------------------------------------------
 
-#.  Running inside the container
-
-    If you are running this inside docker please disable auto-environment loading by running:
-
-    ::
-
-        bins/ml$ export ENV_IN_DOCKER=0
-
 #.  Run the Secure Redis Labs Cloud Demo
 
     ::
@@ -359,14 +351,6 @@ Local
 #.  You can run a password-locked, standalone redis server with docker compose using this script:
         
     https://github.com/jay-johnson/sci-pype/blob/master/bins/redis/auth-start.sh
-
-#.  Running inside the container
-
-    If you are running this inside docker please disable auto-environment loading by running:
-
-    ::
-
-        bins/ml$ export ENV_IN_DOCKER=0
 
 #.  Once the redis server is started you can run the local secure demo with the script:
 
