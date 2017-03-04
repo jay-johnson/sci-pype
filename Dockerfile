@@ -244,6 +244,7 @@ RUN cp /opt/containerfiles/start-notebook.sh /usr/local/bin/ \
     && chown -R $NB_USER:users /opt/work \
     && mkdir -p -m 777 /opt/work/examples \
     && mkdir -p -m 777 /opt/work/src \
+    && mkdir -p -m 777 /opt/work/env \
     && mkdir -p -m 777 /opt/work/bins \
     && mkdir -p -m 777 /opt/work/libs \
     && mkdir -p -m 777 /opt/work/configs \
@@ -251,6 +252,7 @@ RUN cp /opt/containerfiles/start-notebook.sh /usr/local/bin/ \
     && mkdir -p -m 777 /opt/work/data \
     && chown -R $NB_USER:users /opt/work/examples \
     && chown -R $NB_USER:users /opt/work/src \
+    && chown -R $NB_USER:users /opt/work/env \
     && chown -R $NB_USER:users /opt/work/bins \
     && chown -R $NB_USER:users /opt/work/libs \
     && chown -R $NB_USER:users /opt/work/configs \
@@ -265,6 +267,7 @@ COPY ./libs/ /opt/work/libs/
 COPY ./configs/ /opt/work/configs/
 COPY ./bins/ /opt/work/bins/
 COPY ./src/ /opt/work/src/
+COPY ./env/ /opt/work/env/
 COPY ./examples /opt/work/examples/
 
 # Assign all permissions over:
