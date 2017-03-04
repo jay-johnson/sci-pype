@@ -3,8 +3,8 @@
 if [[ -e ./common-bash.sh ]]; then
     source ./common-bash.sh .
 else
-    if [[ -e /opt/scipype/src/common/common-bash.sh ]]; then
-        source /opt/scipype/src/common/common-bash.sh .
+    if [[ -e /opt/work/src/common/common-bash.sh ]]; then
+        source /opt/work/src/common/common-bash.sh .
     fi
 fi
 
