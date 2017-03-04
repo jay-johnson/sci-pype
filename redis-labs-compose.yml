@@ -3,7 +3,7 @@ version: '2'
 services:
 
   jupyter:
-    image: jayjohnson/jupyter:2.0.2
+    image: jayjohnson/jupyter:2.0.4
     container_name: "jupyter"
     hostname: "jupyter"
     env_file: 
