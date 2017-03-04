@@ -3,7 +3,7 @@
 # Load common imports and system envs
 import sys, os, json
 
-def load_env_for_deployment():
+def load_env_for_specific_runtime():
 
     # In case this is not inside docker, load all env vars from the file into the runtime:
     if os.getenv("ENV_IN_DOCKER", "0") == "0": # Set this to anything not "0" and it by pass this
@@ -98,7 +98,7 @@ def load_env_for_deployment():
             print "Not have a valid deployment type:" + str(use_env)
         # end of if valid use_env != "":
     # end of loading for a command-line deployment type
-# end of load_env_for_deployment
+# end of load_env_for_specific_runtime
 
 #
 #

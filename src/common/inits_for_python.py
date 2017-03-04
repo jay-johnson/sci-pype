@@ -74,8 +74,15 @@ lg_enabled      = os.getenv("ENV_SYSLOG_ENABLED", "1")
 logger_name     = os.getenv("ENV_PY_LOGGER_NAME", "ds")
 env_name        = os.getenv("ENV_DEPLOYMENT_TYPE", "Local")
 
-# Load env defaults if not inside docker
-load_env_for_deployment()
+"""
+    If the environment variable ENV_IN_DOCKER=0 then you can load a
+    specific env runtime mapped by the environment variable: ENV_DEPLOYMENT_TYPE
+    where the ["Core"]["Envs"][ENV_DEPLOYMENT_TYPE] is defined in: 
+        https://github.com/jay-johnson/sci-pype/blob/master/configs/jupyter.json
+    and also mapped to a specific env file on disk or in the container:
+        https://github.com/jay-johnson/sci-pype/blob/master/src/common/env_loader.py
+"""
+load_env_for_specific_runtime()
 
 core            = PyCore(core_config)
 now             = datetime.datetime.now()
