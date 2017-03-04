@@ -259,6 +259,8 @@ RUN cp /opt/containerfiles/start-notebook.sh /usr/local/bin/ \
 
 WORKDIR /opt/work
 
+ENV ENV_IN_DOCKER 1
+
 COPY ./libs/ /opt/work/libs/
 COPY ./configs/ /opt/work/configs/
 COPY ./bins/ /opt/work/bins/

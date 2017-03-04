@@ -1,5 +1,5 @@
 registry="docker.io"
-version="2.0.1"
+version="2.0.2"
 maintainer="jayjohnson"
 basename="jupyter/scipy-notebook"
 imagename="jupyter"

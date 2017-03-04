@@ -7,42 +7,8 @@ import sys, os
 #import matplotlib
 #matplotlib.use('Agg')
 
-# Load the Just Redis Secure Connectivity
+# Load the Environment:
 os.environ["ENV_DEPLOYMENT_TYPE"] = "JustRedisSecure"
-
-# In case this is not inside docker and the local secure redis server is running with:
-# https://github.com/jay-johnson/sci-pype/blob/master/bins/redis/auth-start.sh 
-#
-# This will load all env vars from the file into the runtime:
-env_file            = "/opt/work/justredis/jupyter-secure-redis.env"
-if os.path.exists(env_file):
-    debug           = False
-
-    if debug:
-        print ""
-        print "Manually assigning Environment variables from file: " + str(env_file)
-        print ""
-
-    for raw_line in open(env_file).readlines():
-        line        = str(raw_line).replace("\n", "")
-        if "#" not in str(line) and "=" in str(line):
-            splt_ar = line.split("=")
-            if len(splt_ar) > 0:
-                key     = splt_ar[0]
-                value   = "=".join(splt_ar[1:])
-                os.environ[str(key)] = value
-
-                if debug:
-                    print str(key) + " => " + str(value)
-            # end of if the file has 
-        # end of checking if the line has an # and = characters
-    # end of for all lines in the env file to load in this is not inside docker
-
-    if debug:
-        print ""
-else:
-    print "Did not find the Environment file: " + str(env_file)
-# end of loading env in case this is not inside docker 
 
 from src.common.inits_for_python import *
 

@@ -2,6 +2,10 @@
 
 condapip=pip2
 
+if [[ -e /venv/bin/pip ]]; then
+    condapip=/venv/bin/pip
+fi
+
 echo "Installing newest pip"
 ${condapip} install --upgrade pip
 pip3 install --upgrade pip
@@ -42,11 +46,12 @@ fi
 echo "Installing custom pips that are in development"
 ${condapip} install --upgrade git+https://github.com/pydata/pandas-datareader.git
 
-${condapip} install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.0.0-cp27-none-linux_x86_64.whl
+echo "Installing Tensorflow"
+/opt/python2/install_tensorflow.sh
 last_status="$?"
 if [[ "${last_status}" != "0" ]]; then
-    echo "Failed to install Secondary Python 2 requirement: tensorflow"
-    exit 1
+    echo "Failed to install Python 2: tensorflow"
+    exit 1 
 fi
 
 echo "Listing updated version of installed pips:"

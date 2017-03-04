@@ -7,7 +7,7 @@ import sys, os
 #import matplotlib
 #matplotlib.use('Agg')
 
-# Load the Redis Labs Connectivity Endpoints
+# Load the Environment:
 os.environ["ENV_DEPLOYMENT_TYPE"] = "RedisLabs"
 
 from src.common.inits_for_python import *

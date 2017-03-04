@@ -7,6 +7,9 @@ import sys, os
 #import matplotlib
 #matplotlib.use('Agg')
 
+# Load the Environment:
+os.environ["ENV_DEPLOYMENT_TYPE"] = "JustRedis"
+
 from src.common.inits_for_python import *
 
 
