@@ -9,7 +9,7 @@ def load_env_for_deployment():
     if os.getenv("ENV_IN_DOCKER", "0") == "0": # Set this to anything not "0" and it by pass this
 
         use_env         = os.getenv("ENV_DEPLOYMENT_TYPE", "Local")
-        path_to_envs    = os.getenv("ENV_PROJ_DIR", "/opt/work") + "/env/"
+        path_to_envs    = os.getenv("ENV_CL_ENV_DIR", "/opt/work/env") + "/"
 
         target_env_file = "dev.env"
         if use_env != "":

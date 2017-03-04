@@ -109,6 +109,7 @@ ENV ENV_LIBS /opt/work/libs
 
 # Configuration Dir:
 ENV ENV_CONFIGS_DIR /opt/work/configs
+ENV ENV_CL_ENV_DIR /opt/work/env
 
 # Global Python Dirs:
 ENV ENV_PYTHON_SRC_DIR /opt/work/src
@@ -128,6 +129,7 @@ ENV ENV_SLACK_ENABLED 1
 
 # Environment Deployment Type
 ENV ENV_DEPLOYMENT_TYPE Local
+ENV ENV_IN_DOCKER 1
 
 USER root
 
@@ -260,8 +262,6 @@ RUN cp /opt/containerfiles/start-notebook.sh /usr/local/bin/ \
     && chown -R $NB_USER:users /opt/work/data 
 
 WORKDIR /opt/work
-
-ENV ENV_IN_DOCKER 1
 
 COPY ./libs/ /opt/work/libs/
 COPY ./configs/ /opt/work/configs/
