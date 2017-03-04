@@ -13,6 +13,7 @@ services:
     volumes:
       - /opt/project:/opt/project
       - /opt/work:/opt/work
+      - ./env:/opt/work/env
       - ./configs:/opt/work/configs
       - ./examples:/opt/work/examples
     network_mode: "host"
