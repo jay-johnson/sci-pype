@@ -5,6 +5,8 @@ import sys, os, json
 
 def load_env_for_specific_runtime():
 
+    debug               = False
+
     # In case this is not inside docker, load all env vars from the file into the runtime:
     if os.getenv("ENV_IN_DOCKER", "0") == "0": # Set this to anything not "0" to bypass
 
@@ -64,7 +66,6 @@ def load_env_for_specific_runtime():
                 # end of loading the env inside or outside docker
 
                 if os.path.exists(env_file):
-                    debug           = False
 
                     if debug:
                         print ""
@@ -90,12 +91,15 @@ def load_env_for_specific_runtime():
                     if debug:
                         print ""
                 else:
-                    print "Did not find the Environment file: " + str(env_file)
+                    if debug:
+                        print "Did not find the Environment file: " + str(env_file)
             else:
-                print "Not a supported Environment(" + str(use_env) + "): " + str(env_file)
+                if debug:
+                    print "Not a supported Environment(" + str(use_env) + "): " + str(env_file)
             # end of loading env in case this is not inside docker 
         else:
-            print "Not have a valid deployment type:" + str(use_env)
+            if debug:
+                print "Not have a valid deployment type:" + str(use_env)
         # end of if valid use_env != "":
     # end of loading for a command-line deployment type
 # end of load_env_for_specific_runtime

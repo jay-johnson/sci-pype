@@ -61,6 +61,8 @@ export PYSPARK_DRIVER_PYTHON_OPTS="notebook --NotebookApp.open_browser=False --N
 export ENV_THIRD_PARTY_SOURCE_DIR=/opt/work/src/thirdparty
 export ENV_AWS_KEY=AWS_KEY
 export ENV_AWS_SECRET=AWS_SECRET
+export ENV_DEPLOYMENT_TYPE=Local
+export ENV_CL_ENV_DIR=/opt/work/env
 
 export ENV_SCP_VENV_BASE_DIR="/opt/venv"
 export ENV_SCP_VENV_NAME="scipype"
