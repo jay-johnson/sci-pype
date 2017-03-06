@@ -5,13 +5,16 @@ import sys, os, json
 
 def load_env_for_specific_runtime():
 
-    debug               = False
+    debug               = str(os.getenv("ENV_DEBUG_LOADING", "0")) == "1"
 
     # In case this is not inside docker, load all env vars from the file into the runtime:
     if os.getenv("ENV_IN_DOCKER", "0") == "0": # Set this to anything not "0" to bypass
 
         use_env         = os.getenv("ENV_DEPLOYMENT_TYPE", "Local")
         path_to_envs    = os.getenv("ENV_CL_ENV_DIR", "/opt/work/env") + "/"
+
+        if debug:
+            print "Loading ENV_DEPLOYMENT_TYPE: " + str(use_env)
 
         target_env_file = "dev.env"
         if use_env != "":
