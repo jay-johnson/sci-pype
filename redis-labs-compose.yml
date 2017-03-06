@@ -11,10 +11,11 @@ services:
     ports:
       - "82:8888"
     volumes:
-      - /opt/project:/opt/project
-      - /opt/work:/opt/work
       - ./env:/opt/work/env
       - ./configs:/opt/work/configs
       - ./examples:/opt/work/examples
+      - ./bins/ml/downloaders/download_iris.py:/opt/work/bins/ml/downloaders/download_iris.py
+      - /opt/project:/opt/project
+      - /opt/work:/opt/work
     network_mode: "host"
 

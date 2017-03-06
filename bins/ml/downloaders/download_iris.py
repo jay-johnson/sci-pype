@@ -28,51 +28,58 @@ if not os.path.exists(data_dir):
     os.mkdir(data_dir, 0777)
 
 #
-# Downloading a CSV from the Scikit Learn repo: 
-# https://github.com/scikit-learn/scikit-learn/tree/master/sklearn/datasets/data
-#
-url_to_download     = "https://raw.githubusercontent.com/rasbt/python-machine-learning-book/master/code/datasets/iris/iris.data"
-if args.url:
-    url_to_download = str(args.url)
-
-filename            = url_to_download.split("/")[-1].replace(".data", ".csv")
-save_file_path      = data_dir + "/" + filename
-#
 # End Arg Processing
 #
 #####################################################################
 
+save_file_path          = data_dir + "/iris.csv"
 
-# Turn this off to iterating on data synthesis 
-download_set        = True
-if download_set:
+if os.path.exists("/opt/work/examples/datasets/iris.csv"):
+    org_path            = "/opt/work/examples/datasets/iris.csv"
+    os.system("rm -f " + save_file_path + " && cp " + str(org_path) + " " + save_file_path)
+else:
+    #
+    # Downloading a CSV from the Rasbt repo: 
+    # https://github.com/rasbt/python-machine-learning-book
+    #
+    url_to_download     = "https://github.com/rasbt/python-machine-learning-book/blob/194e34f245abb97f53d0e72166ab6785d01a1e94/code/datasets/iris/iris.data"
+    if args.url:
+        url_to_download = str(args.url)
 
-    if os.path.exists(save_file_path):
-        lg("ERROR: Cannot download while file Already Exists: " + str(save_file_path), 0)
+    filename            = url_to_download.split("/")[-1].replace(".data", ".csv")
+    save_file_path      = data_dir + "/" + filename
+
+    # Turn this off to iterating on data synthesis 
+    download_set        = True
+    if download_set:
+
+        if os.path.exists(save_file_path):
+            lg("ERROR: Cannot download while file Already Exists: " + str(save_file_path), 0)
+            sys.exit(1)
+        # end of removing previous existing file
+
+        import requests, tqdm
+        lg("Downloading File(" + str(url_to_download) + ")", 6)
+
+        # Add your own labels as needed:
+        header_row  = "SepalLength,SepalWidth,PetalLength,PetalWidth,ResultLabel"
+
+        response    = requests.get(url_to_download, stream=True)
+        with open(save_file_path, "wb") as handle:
+            lg("Saving to File(" + str(save_file_path) + ")", 6)
+            handle.write(header_row + "\n")
+            for data in tqdm.tqdm(response.iter_content()):
+                handle.write(data)
+        # end of tqdm downloader
+
+    if os.path.exists(save_file_path) == False:
+        lg("ERROR: Failed to find downloaded file: " + str(save_file_path), 0)
         sys.exit(1)
-    # end of removing previous existing file
-
-    import requests, tqdm
-    lg("Downloading File(" + str(url_to_download) + ")", 6)
-
-    # Add your own labels as needed:
-    header_row  = "SepalLength,SepalWidth,PetalLength,PetalWidth,ResultLabel"
-
-    response    = requests.get(url_to_download, stream=True)
-    with open(save_file_path, "wb") as handle:
-        lg("Saving to File(" + str(save_file_path) + ")", 6)
-        handle.write(header_row + "\n")
-        for data in tqdm.tqdm(response.iter_content()):
-            handle.write(data)
-    # end of tqdm downloader
-
+    else:
+        lg("Using Downloaded File: " + str(save_file_path), 6)
+    # end of success downloading
 # end of download set
 
-if os.path.exists(save_file_path) == False:
-    lg("ERROR: Failed to find downloaded file: " + str(save_file_path), 0)
-    sys.exit(1)
-
-lg("Using Downloaded File: " + str(save_file_path), 6)
 
 lg("-------------------------------------------------", 6)
 lg("Preparing Dataset", 6)

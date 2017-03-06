@@ -30,6 +30,7 @@ services:
     volumes:
       - ./configs:/opt/work/configs
       - ./examples:/opt/work/examples
+      - ./bins/ml/downloaders/download_iris.py:/opt/work/bins/ml/downloaders/download_iris.py
       - /opt/project:/opt/project
       - /opt/work/data/src:/opt/work/data/src
       - /opt/work/data/dst:/opt/work/data/dst
