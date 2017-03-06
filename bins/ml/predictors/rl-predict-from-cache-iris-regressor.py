@@ -68,15 +68,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 if os.path.exists(ml_csv) == False:
-    s3_loc              = str(s3_bucket) + ":" + str(s3_key)
-    download_results    = core.s3_download_and_store_file(s3_loc, ml_csv, core.get_rds(), core.get_dbs(), debug)
-
-    if download_results["Status"] != "SUCCESS":
-        lg("ERROR: Stopping processing for errror: " + str(download_results["Error"]), 0)
-        sys.exit(1)
+    if os.path.exists("/opt/work/examples/datasets/iris.csv"):
+        org_path            = "/opt/work/examples/datasets/iris.csv"
+        os.system("cp " + str(org_path) + " " + ml_csv)
+    elif os.path.exists(os.getenv("ENV_PROJ_REPO_DIR", "/opt/work") + "/examples/datasets/iris.csv"):
+        org_path            = os.getenv("ENV_PROJ_REPO_DIR", "/opt/work") + "/examples/datasets/iris.csv"
+        os.system("cp " + str(org_path) + " " + ml_csv)
     else:
-        ml_csv          = download_results["Record"]["File"]
-# end of downloading from s3 if it's not locally available
+        lg("Recreating iris dataset: /opt/work/bins/ml/downloaders/download_iris.py", 6)
+        os.system("/opt/work/bins/ml/downloaders/download_iris.py")
+        if os.path.exists(ml_csv) == False:
+            lg("Failed to recreate iris dataset with: /opt/work/bins/ml/downloaders/download_iris.py", 0)
+            lg("Stopping", 6)
+            sys.exit(1)
+# end of checking if the csv file is available
 
 lg("Processing ML Predictions for CSV(" + str(ml_csv) + ")", 6)
 

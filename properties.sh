@@ -10,6 +10,7 @@ export ENV_DATA_DIR="/opt/work/data"
 export ENV_DATA_SRC_DIR="/opt/work/data/src"
 export ENV_DATA_DST_DIR="/opt/work/data/dst"
 export ENV_PLOT_FOOTNOTE="Your Footnote"
+export ENV_PROJ_REPO_DIR=$(pwd)
 
 # Allow running starters from outside the container
 export ENV_DATA_BIN_DIR="/opt/work/data/bin"
