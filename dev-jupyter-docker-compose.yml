@@ -11,11 +11,7 @@ services:
     ports:
       - "82:8888"
     volumes:
-      - ./configs:/opt/work/configs
-      - ./examples:/opt/work/examples
-      - ./bins:/opt/work/bins
-      - /opt/project:/opt/project
-      - /opt/work:/opt/work
+      - .:/opt/work
     network_mode: "host"
 
   redis-server:
@@ -27,12 +23,7 @@ services:
       - ./test/redis.env
     ports:
       - "6000:6000"
-    networks:
-      - datapype
+    network_mode: "host"
     volumes:
       - ./wait-for-its:/wait-for-its
-
-networks:
-  datapype:
-    driver: bridge
 

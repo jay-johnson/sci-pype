@@ -11,21 +11,6 @@ services:
     ports:
       - "82:8888"
     volumes:
-      - ./configs:/opt/work/configs
-      - ./examples:/opt/work/examples
-      - ./bins:/opt/work/bins
-      - /opt/project:/opt/project
-      - /opt/work/data/src:/opt/work/data/src
-      - /opt/work/data/dst:/opt/work/data/dst
-      - /opt/work/data/bin:/opt/work/data/bin
-      - /opt/work/data/synthesize:/opt/work/data/synthesize
-      - /opt/work/data/tidy:/opt/work/data/tidy
-      - /opt/work/data/analyze:/opt/work/data/analyze
-      - /opt/work/data/output:/opt/work/data/output
-    networks:
-      - standalonedatapype
-
-networks:
-  standalonedatapype:
-    driver: bridge
+      - .:/opt/work
+    network_mode: "host"
 

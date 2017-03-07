@@ -11,7 +11,7 @@ services:
     env_file: 
       - ./test/db.env
     volumes:
-      - /opt/work/schema:/opt/work/schema
+      - ./src/databases/schema:/opt/work/schema
     ports:
       - "81:80"
       - "3307:3306"
@@ -28,17 +28,7 @@ services:
     ports:
       - "82:8888"
     volumes:
-      - ./configs:/opt/work/configs
-      - ./examples:/opt/work/examples
-      - ./bins:/opt/work/bins
-      - /opt/project:/opt/project
-      - /opt/work/data/src:/opt/work/data/src
-      - /opt/work/data/dst:/opt/work/data/dst
-      - /opt/work/data/bin:/opt/work/data/bin
-      - /opt/work/data/synthesize:/opt/work/data/synthesize
-      - /opt/work/data/tidy:/opt/work/data/tidy
-      - /opt/work/data/analyze:/opt/work/data/analyze
-      - /opt/work/data/output:/opt/work/data/output
+      - .:/opt/work
       - ./wait-for-its:/wait-for-its
     networks:
       - datapype

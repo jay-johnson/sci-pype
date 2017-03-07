@@ -11,11 +11,6 @@ services:
     ports:
       - "82:8888"
     volumes:
-      - ./env:/opt/work/env
-      - ./configs:/opt/work/configs
-      - ./examples:/opt/work/examples
-      - ./bins:/opt/work/bins
-      - /opt/project:/opt/project
-      - /opt/work:/opt/work
+      - .:/opt/work
     network_mode: "host"
 

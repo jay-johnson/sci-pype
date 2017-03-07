@@ -235,6 +235,22 @@ Here is how to run locally without using docker (and Lambda deployments in the f
         xgboost                            0.6a2                                                 
         (scipype) scipype$ 
 
+#.  Setup the /opt/work symlink 
+
+    When running outside docker, I find it easiest to just symlink the repo's base dir to ``/opt/work`` to emulate the container's internal directory deployment structure. In a future release, a local-properties.sh file will set all the environment variables relative to the repository, but for now this works.
+    
+    ::
+
+        scipype$ ln -s $(pwd) /opt/work
+
+#.  Confirm the symlink is setup
+
+    ::
+
+        scipype$ ll /opt/work
+        lrwxrwxrwx 1 driver driver 32 Mar  6 22:38 /opt/work -> /home/driver/dev/scipype/
+        scipype$ 
+
 #.  If you want to always use this virtual environment add this to your ``~/.bashrc``
 
     ::

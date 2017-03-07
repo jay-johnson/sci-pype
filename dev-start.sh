@@ -1,8 +1,8 @@
 #!/bin/bash
 
-filetouse="dev-jupyter-docker-compose.yml"
-
 source ./properties.sh .
+
+filetouse="dev-jupyter-docker-compose.yml"
 
 echo "Starting Composition: $filetouse"
 docker-compose -f $filetouse up -d
