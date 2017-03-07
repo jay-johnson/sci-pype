@@ -9,6 +9,11 @@
 .ipynb_checkpoints
 *.zlib.pickle
 *.pickle.zlib
+data/src/*.png
+data/dst/*.png
+data/examples/*.png
+data/src/spy.csv
+python2/newenv
 
 *.pyc
 *.pyo
@@ -35,5 +40,3 @@
 */*/*/*.swo
 */*/*/*.db
 
-data/*
-python2/newenv
