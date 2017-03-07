@@ -13,6 +13,7 @@ data/src/*.png
 data/dst/*.png
 data/examples/*.png
 data/src/spy.csv
+data/src/iris.csv
 python2/newenv
 
 *.pyc
