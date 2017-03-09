@@ -46,6 +46,7 @@ RUN cp /opt/tools/bashrc /root/.bashrc \
     && cp /opt/tools/start-container.sh /opt/start-container.sh \
     && cp /opt/start-container.sh /usr/local/bin/start-container.sh \
     && mkdir -p -m 777 /opt/data/src /opt/data/dst \
+    && mkdir -p -m 777 /opt/redis/run \
     && chmod 644 /root/.bashrc && chown root:root /root/.bashrc \
     && mkdir -p -m 777 /etc/supervisor.d \
     && updatedb \

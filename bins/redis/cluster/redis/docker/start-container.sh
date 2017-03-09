@@ -13,15 +13,6 @@ lg ""
 lg "Activating Virtual Env"
 source /venv/bin/activate .
 
-if [[ ! -e /opt/.keys.sh ]]; then
-    err "Failed to find Keys: /opt/.keys.sh"
-    echo "Failed to find Keys: /opt/.keys.sh"
-    echo "Cloud Actions will not work unless this file is present"
-else
-    lg "Loading Keys"
-    source /opt/.keys.sh .
-fi
-
 lg "Starting Services"
 
 prestartscript="$ENV_PRESTART_SCRIPT"
