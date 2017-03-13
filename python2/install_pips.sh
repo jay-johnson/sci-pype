@@ -27,6 +27,9 @@ if [[ "${last_status}" != "0" ]]; then
 fi
 popd
 
+${pip} install --upgrade Cython
+${pip} install --upgrade numpy==1.12.1rc1
+
 echo "Installing Primary set of pips"
 ${condapip} install --upgrade -r /opt/python2/primary-requirements.txt
 last_status="$?"

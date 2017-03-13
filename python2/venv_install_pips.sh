@@ -16,6 +16,9 @@ git clone https://github.com/iustin/pyxattr.git pyxattr
 ${pip} install ./pyxattr
 popd
 
+${pip} install --upgrade Cython
+${pip} install --upgrade numpy==1.12.1rc1
+
 echo "Installing Primary set of pips"
 ${pip} install --upgrade -r ./python2/primary-requirements.txt
 last_status="$?"
@@ -36,7 +39,7 @@ echo "Installing custom pips that are in development"
 ${pip} install --upgrade git+https://github.com/pydata/pandas-datareader.git
 
 echo "Installing Tensorflow"
-/opt/python2/install_tensorflow.sh
+./python2/install_tensorflow.sh
 last_status="$?"
 if [[ "${last_status}" != "0" ]]; then
     echo "Failed to install Python 2: tensorflow"
