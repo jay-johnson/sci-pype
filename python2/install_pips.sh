@@ -29,6 +29,7 @@ popd
 
 ${condapip} install --upgrade Cython
 ${condapip} install --upgrade numpy==1.12.1rc1
+${condapip} install --upgrade scipy==0.19.0
 
 echo "Installing Primary set of pips"
 ${condapip} install --upgrade -r /opt/python2/primary-requirements.txt

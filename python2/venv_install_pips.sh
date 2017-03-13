@@ -18,6 +18,7 @@ popd
 
 ${pip} install --upgrade Cython
 ${pip} install --upgrade numpy==1.12.1rc1
+${pip} install --upgrade scipy==0.19.0
 
 echo "Installing Primary set of pips"
 ${pip} install --upgrade -r ./python2/primary-requirements.txt
