@@ -4,6 +4,9 @@ log="/tmp/startnotebook.log"
 
 echo "$(date +'%m-%d-%y %H:%M:%S') Starting Notebook" > $log
 
+echo "$(date +'%m-%d-%y %H:%M:%S') Enabling ipywidgets: http://ipywidgets.readthedocs.io/en/latest/user_install.html" >> $log
+jupyter nbextension enable --py widgetsnbextension --sys-prefix &>> $log
+
 # Handle special flags if we're root
 if [ $UID == 0 ] ; then
     # Change UID of NB_USER to NB_UID if it does not match
@@ -17,18 +20,18 @@ if [ $UID == 0 ] ; then
         echo "$NB_USER ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/notebook
     fi
 
-    echo "$(date +'%m-%d-%y %H:%M:%S') exec su $NB_USER -c \"env PATH=$PATH jupyter notebook $*\"" >> $log
+    echo "$(date +'%m-%d-%y %H:%M:%S') exec su $NB_USER -c \"env PATH=$PATH /opt/conda/envs/python2/bin/jupyter notebook $*\"" >> $log
 
     # Start the notebook server
-    exec su $NB_USER -c "env PATH=$PATH jupyter notebook $*" &>> $log
+    exec su $NB_USER -c "env PATH=$PATH /opt/conda/envs/python2/bin/jupyter notebook $*" &>> $log
 else
     # Otherwise just exec the notebook
     if [[ "${ENV_JUPYTER_PASSWORD}" == "" ]]; then
-        echo "$(date +'%m-%d-%y %H:%M:%S') exec jupyter notebook --NotebookApp.token='' $*" >> $log
-        exec jupyter notebook --NotebookApp.token='' $* &>> $log
+        echo "$(date +'%m-%d-%y %H:%M:%S') exec /opt/conda/envs/python2/bin/jupyter notebook --NotebookApp.token='' $*" >> $log
+        exec /opt/conda/envs/python2/bin/jupyter notebook --NotebookApp.token='' $* &>> $log
     else
-        echo "$(date +'%m-%d-%y %H:%M:%S') exec jupyter notebook $*" >> $log
-        exec jupyter notebook $* &>> $log
+        echo "$(date +'%m-%d-%y %H:%M:%S') exec /opt/conda/envs/python2/bin/jupyter notebook $*" >> $log
+        exec /opt/conda/envs/python2/bin/jupyter notebook $* &>> $log
     fi
 fi
 

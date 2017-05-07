@@ -12,4 +12,6 @@ xgboost==0.6a2
 xlrd==1.0.0
 xmltodict==0.10.2
 jupyterthemes>=0.13.9
+ipywidgets>=7.0.0a2
+widgetsnbextension>=3.0.0a3
 zappa>=0.34.0

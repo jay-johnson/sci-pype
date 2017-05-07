@@ -167,6 +167,8 @@ RUN conda install --quiet --yes \
     'pandas-datareader' \
     'tensorflow' \
     'alembic' \
+    'ipywidgets' \
+    'widgetsnbextension' \
     'pyqt=4.11'
 
 # Add Volumes and Set permissions
