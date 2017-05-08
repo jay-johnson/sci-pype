@@ -7,6 +7,10 @@ echo "$(date +'%m-%d-%y %H:%M:%S') Starting Notebook" > $log
 echo "$(date +'%m-%d-%y %H:%M:%S') Enabling ipywidgets: http://ipywidgets.readthedocs.io/en/latest/user_install.html" >> $log
 jupyter nbextension enable --py widgetsnbextension --sys-prefix &>> $log
 
+echo "$(date +'%m-%d-%y %H:%M:%S') Enabling RISE: https://github.com/damianavila/RISE" >> $log
+jupyter nbextension install rise --py --sys-prefix
+jupyter nbextension enable rise --py --sys-prefix
+
 # Handle special flags if we're root
 if [ $UID == 0 ] ; then
     # Change UID of NB_USER to NB_UID if it does not match

@@ -1,5 +1,6 @@
 autograd==1.1.7
 odo==0.5.0
+rise==4.0.0b1
 scikit-image==0.12.3
 scikit-learn==0.18.1
 scikit-neuralnetwork==0.7
