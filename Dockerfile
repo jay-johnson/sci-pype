@@ -169,6 +169,7 @@ RUN conda install --quiet --yes \
     'alembic' \
     'ipywidgets' \
     'widgetsnbextension' \
+    'vega' \
     'pyqt=4.11'
 
 # Add Volumes and Set permissions

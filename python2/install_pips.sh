@@ -58,6 +58,14 @@ if [[ "${last_status}" != "0" ]]; then
     exit 1 
 fi
 
+echo "Installing XGBoost"
+/opt/python2/install_xgboost.sh
+last_status="$?"
+if [[ "${last_status}" != "0" ]]; then
+    echo "Failed to install Python 2: xgboost"
+    exit 1 
+fi
+
 echo "Listing updated version of installed pips:"
 ${condapip} list --format=columns
 echo ""

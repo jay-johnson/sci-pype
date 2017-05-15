@@ -211,6 +211,5 @@ websocket-client==0.40.0
 whichcraft==0.4.0
 wrapt==1.10.8
 WSME==0.8.0
-xgboost==0.6a2
 xlrd==1.0.0
 xmltodict==0.10.2

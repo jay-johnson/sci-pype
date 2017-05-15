@@ -16,3 +16,4 @@ jupyterthemes>=0.13.9
 ipywidgets>=7.0.0a2
 widgetsnbextension>=3.0.0a3
 zappa>=0.34.0
+vega>=0.4.4

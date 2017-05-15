@@ -1,5 +1,5 @@
 registry="docker.io"
-version="2.0.5"
+version="2.0.6"
 maintainer="jayjohnson"
 basename="jupyter/scipy-notebook"
 imagename="jupyter"
@@ -82,7 +82,5 @@ export ENV_SCP_ACTIVATE_BY_DEFAULT=1
 if [[ "${ENV_SCP_ACTIVATE_BY_DEFAULT}" == "1" ]]; then
     if [[ -e ${ENV_SCP_VENV_ACTIVATE} ]]; then
         source $ENV_SCP_VENV_ACTIVATE .
-    else
-        echo "Did not find Scipype VirtualEnv At Path(${ENV_SCP_VENV_ACTIVATE}). Please install it with: scipype$ ./setup-new-dev.sh"
     fi
 fi
