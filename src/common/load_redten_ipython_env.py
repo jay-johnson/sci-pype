@@ -947,8 +947,6 @@ def run_job(query_params={}, post_data={}, headers={}, user_id=2, retry=False, d
 
         if "ds_name" in post_data:
             ds_name = str(post_data["ds_name"])
-            if str(ds_name) not in str(post_data["csv_file"]):
-                post_data["csv_file"] = str(post_data["csv_file"]).replace("SPY", ds_name)
         # end of changing the csv file by the data set name
 
         post_response = requests.post(use_url, params=query_params, data=json.dumps(post_data), headers=headers)
