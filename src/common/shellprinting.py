@@ -43,6 +43,30 @@ def red_print(msg):
 # end of red_print
 
 
+def good(msg):
+    green_print(msg)
+# end of good
+
+
+def boom(msg):
+    red_print(msg)
+# end of boom
+
+
+def anmt(msg):
+    yellow_print(msg)
+# end of anmt
+
+
+def mark(msg):
+    lg("", 6)
+    anmt("------------------")
+    boom(msg)
+    anmt("------------------")
+    lg("", 6)
+# end of mark
+
+
 def lg(msg, color_num=6):
     if color_num == 0:
         red_print(msg)

@@ -1,0 +1,20 @@
+version: '2'
+
+services:
+
+  jupyter:
+    image: jayjohnson/jupyter:2.0.6
+    container_name: "jupyter"
+    hostname: "jupyter"
+    env_file: 
+      - ./env/dev.env
+    environment:
+     - ENV_REDTEN_USER=${ENV_REDTEN_USER}
+     - ENV_REDTEN_PASS=${ENV_REDTEN_PASS}
+     - ENV_REDTEN_EMAIL=${ENV_REDTEN_EMAIL}
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/opt/work
+    network_mode: "host"
+
