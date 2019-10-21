@@ -37,7 +37,7 @@ decorator==4.0.10
 di==0.3
 docutils==0.12
 dotenv==0.0.5
-ecdsa==0.13
+ecdsa==0.13.3
 enum34==1.1.6
 engarde==0.3.1
 eventlet==0.19.0
