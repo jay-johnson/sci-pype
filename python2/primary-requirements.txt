@@ -119,7 +119,7 @@ Paver==1.2.4
 pcapy==0.10.10
 pexpect==4.2.1
 pickleshare==0.7.4
-Pillow==3.4.2
+Pillow==8.1.1
 pluggy==0.4.0
 ply==3.9
 pockets==0.3.1
