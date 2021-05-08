@@ -40,7 +40,7 @@ dotenv==0.0.5
 ecdsa==0.13
 enum34==1.1.6
 engarde==0.3.1
-eventlet==0.19.0
+eventlet==0.31.0
 feedparser==5.2.1
 flup==1.0.2
 fudge==1.1.0
