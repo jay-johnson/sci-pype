@@ -9,7 +9,7 @@ arrow==0.10.0
 astroid==1.4.8
 aws-shell==0.1.1
 awscli==1.10.67
-Babel==2.3.4
+Babel==2.9.1
 beautifulsoup4==4.5.1
 behave==1.2.5
 binaryornot==0.4.0
