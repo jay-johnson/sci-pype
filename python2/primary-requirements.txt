@@ -108,7 +108,7 @@ Oz==0.8.2
 pandas==0.19.1
 pandas-datareader==0.2.1
 pandas-ml==0.4.0
-paramiko==2.1.1
+paramiko==2.10.1
 parse==1.6.6
 parse-type==0.3.4
 path.py==9.0.1
