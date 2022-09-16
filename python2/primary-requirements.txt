@@ -102,7 +102,7 @@ oslo.db==4.13.5
 oslo.i18n==3.11.0
 oslo.messaging==5.16.0
 oslo.serialization==2.15.0
-oslo.utils==3.21.0
+oslo.utils==4.10.1
 oslo.vmware==2.16.0
 Oz==0.8.2
 pandas==0.19.1
