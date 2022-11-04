@@ -200,7 +200,7 @@ tox==2.3.2
 tqdm==4.10.0
 traceback2==1.4.0
 traitlets==4.3.1
-Twisted==16.6.0
+Twisted==22.10.0
 Unidecode==0.4.19
 unittest2==1.1.0
 urllib3==1.19.1
