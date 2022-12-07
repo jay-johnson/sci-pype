@@ -17,7 +17,7 @@ boto==2.42.0
 boto3==1.4.0
 botocore==1.4.57
 brewer2mpl==1.4.1
-certifi==2016.9.26
+certifi==2022.12.7
 cffi==1.8.3
 characteristic==14.3.0
 chardet==2.2.1
